@@ -4,6 +4,7 @@ from lineSearch import backtracking_search, wolf_search
 import time
 from tqdm import tqdm
 from typing import Callable
+import os
 
 def iterate_alpha(f_curr: float, f_prev: float, gradf_prev: NDArray, p_prev: NDArray) -> float:
     """find initial step length for each iteration
@@ -36,7 +37,7 @@ def steepest_descent(
         f (Callable[NDArray]): Objective function.
         gradf (Callable[NDArray]): Gradient of objective function.
         x0 (NDArray): initial position.
-        output (str): name of output file.
+        output (str, optional): name of output file.
         line_search (str, optional): Line search method.
         max_iter (int, optional): Maximum iteration number. Defaults to 5000.
         conv_threshold (float, optional): Convergent threshold. Defaults to 1e-6.
@@ -51,6 +52,11 @@ def steepest_descent(
     # check if line_search legit
     if line_search not in {"armijo", "wolf"}:
         raise ValueError("line_search must be 'armijo' or 'wolf'!")
+    
+    # check if parent dir exists
+    parent_dir = os.path.dirname(output)
+    if not os.path.exists(parent_dir):
+        os.makedirs(parent_dir)
 
     # record start time of the program
     start_time = time.perf_counter()

@@ -54,10 +54,11 @@ def newtown(
     line_search: str='armijo',
     max_iter: int = 5000,
     conv_threshold: float = 1e-8,
-    eta: None|float=0.01,
+    eta: float=0.01,
+    cpu_time_max: int = 600,
     alpha0: float = 1,
-    cpu_time_max: int = 600
-) -> None:
+    **line_search_param
+) -> tuple[NDArray, float]:
     """Direct Newton's methods
 
     Args:
@@ -66,12 +67,14 @@ def newtown(
         hessianf (Callable[[NDArray], NDArray]): hessian of objective function
         x0 (NDArray): initial position
         output (str): filename of output file
+        method (str, optional): method used for solving linear system of equation, can be 'exact' or 'cg'
+        line_search (str, optional): method used for line search, can be 'armijo' or 'wolf'
         max_iter (int, optional): maximum iteration allowed. Defaults to 5000.
         conv_threshold (float, optional): Convergence threshold for gradient. Defaults to 1e-8.
         alpha0 (float, optional): initial step length for 1st iteration. Defaults to 1.
 
     Returns:
-        None
+        tuple(NDArray, float): 
     """
     if method not in ['exact', 'cg']:
         raise TypeError("method can only be 'exact' or 'cg'. ")
@@ -120,10 +123,10 @@ def newtown(
                 break
 
             if line_search == 'armijo':
-                alphak = backtracking_search(f, gradf_xk, xk, pk, alpha0)
+                alphak = backtracking_search(f, gradf_xk, xk, pk, alpha0, **line_search_param)
             elif line_search == 'wolf':
                 # wolf search of step length
-                alphak = wolf_search(f, gradf, xk, pk)
+                alphak = wolf_search(f, gradf, xk, pk, **line_search_param)
             else:
                 raise ValueError("Line search method must be 'armijo' or 'wolf'!")
 
@@ -163,7 +166,7 @@ def newtown(
             f"Optimized objective function value: {f_xk:.2e}. Computing time: {end_time - start_time:.3f} s.\n"
         )
 
-    return None
+    return xk, f_xk
 
 
 def modified_newtown_cholesky(
@@ -175,9 +178,30 @@ def modified_newtown_cholesky(
     line_search: str='armijo',
     max_iter: int = 5000,
     conv_threshold: float = 1e-8,
-    alpha0: float = 1,
     beta: float=1e-4,
-) -> None:
+    alpha0: float = 1,
+    **line_search_param
+) -> tuple[NDArray, float]:
+    """_summary_
+
+    Args:
+        f (Callable[[NDArray], float]): _description_
+        gradf (Callable[[NDArray], NDArray]): _description_
+        hessianf (Callable[[NDArray], NDArray]): _description_
+        x0 (NDArray): _description_
+        output (str): _description_
+        line_search (str, optional): _description_. Defaults to 'armijo'.
+        max_iter (int, optional): _description_. Defaults to 5000.
+        conv_threshold (float, optional): _description_. Defaults to 1e-8.
+        beta (float, optional): _description_. Defaults to 1e-4.
+        alpha0 (float, optional): _description_. Defaults to 1.
+
+    Raises:
+        ValueError: _description_
+
+    Returns:
+        tuple[NDArray, float]: _description_
+    """    
     # start timeer
     start_time = time.perf_counter()
 
@@ -216,10 +240,10 @@ def modified_newtown_cholesky(
 
             if line_search == 'armijo':
                 # backtracking search of step length
-                alphak = backtracking_search(f, gradf_xk, xk, pk, alpha0)
+                alphak = backtracking_search(f, gradf_xk, xk, pk, alpha0, **line_search_param)
             elif line_search == 'wolf':
                 # wolf line search of step length
-                alphak = wolf_search(f, gradf, xk, pk)
+                alphak = wolf_search(f, gradf, xk, pk, **line_search_param)
             else:
                 raise ValueError("Line search method must be 'armijo' or 'wolf'!")
             
@@ -248,4 +272,4 @@ def modified_newtown_cholesky(
             f"Optimized objective function value: {f_xk:.2e}. Computing time: {end_time - start_time:.3f} s.\n"
         )
 
-    return None
+    return xk, f_xk

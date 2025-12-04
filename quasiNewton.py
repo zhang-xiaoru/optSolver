@@ -68,6 +68,16 @@ def construct_hessian(
         y_list: NDArray,
         rho_list: NDArray
 ) -> NDArray:
+    """_summary_
+
+    Args:
+        s_list (NDArray): _description_
+        y_list (NDArray): _description_
+        rho_list (NDArray): _description_
+
+    Returns:
+        NDArray: _description_
+    """    
     q = 1
     m = s_list.shape[0]
     n = s_list.shape[1]
@@ -208,6 +218,7 @@ def BFGS(
     return None
 '''
 
+#### BFGS with two-loop adding when iteration < dimension
 def BFGS(
     f: Callable[[NDArray], float],
     gradf: Callable[[NDArray], NDArray],
@@ -215,12 +226,13 @@ def BFGS(
     h0: NDArray,
     output: str,
     line_search: str="armijo",
-    alpha0: float=1,
     max_iter: int = 5000,
     epsilon: float = 1e-8,
     conv_threshold: float = 1e-8,
     cpu_time_max: int = 600,
-) -> None:
+    alpha0: float=1,
+    **line_search_param
+) -> tuple[NDArray, float]:
     """implementation of BFGS methods with Wolf line search
 
     Args:
@@ -340,7 +352,7 @@ def BFGS(
             f"Optimized objective function value: {f_xk:.2e}. Computing time: {end_time - start_time:.3f} s.\n"
         )
 
-    return None
+    return xk, f_xk
 
 def LBFGS(
     f: Callable[[NDArray], float],
@@ -349,12 +361,13 @@ def LBFGS(
     m: int,
     output: str,
     line_search: str='armijo',
-    alpha0: float=1,
     max_iter: int = 5000,
     epsilon: float = 1e-8,
     conv_threshold: float = 1e-8,
     cpu_time_max: int = 600,
-) -> None:
+    alpha0: float=1,
+    **line_search_param
+) -> tuple[NDArray, float]:
     """implemntation of LBFGS methods
 
     Args:
@@ -468,7 +481,7 @@ def LBFGS(
             f"Optimized objective function value: {f_xk:.2e}. Computing time: {end_time - start_time:.3f} s.\n"
         )
 
-    return None
+    return xk, f_xk
 
 
 def DFP(
@@ -478,12 +491,13 @@ def DFP(
     h0: NDArray,
     output: str,
     line_search: str="armijo",
-    alpha0: float=1,
     max_iter: int = 5000,
     epsilon: float = 1e-8,
     conv_threshold: float = 1e-8,
     cpu_time_max: int = 600,
-) -> None:
+    alpha0: float=1,
+    **line_search_param
+) -> tuple[NDArray, float]:
     """implementation of BFGS methods with Wolf line search
 
     Args:
@@ -510,7 +524,6 @@ def DFP(
         # initialize
         xk = x0
         f_xk, gradf_xk, h_k = f(xk), gradf(xk), h0
-        idt = np.eye(x0.shape[0])
         
 
         # gradient convergent condition
@@ -585,4 +598,4 @@ def DFP(
             f"Optimized objective function value: {f_xk:.2e}. Computing time: {end_time - start_time:.3f} s.\n"
         )
 
-    return None
+    return xk, f_xk

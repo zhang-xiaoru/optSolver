@@ -1,4 +1,6 @@
 from gradientDescent import steepest_descent
+from newtonMethod import newtown, modified_newtown_cholesky
+from quasiNewton import BFGS, LBFGS, DFP
 
 class Method:
     VALID_METHODS={
@@ -20,9 +22,6 @@ class Method:
         if line_search:
             self.param["line_search"] = line_search
 
-    def set_method_params(self, **kwards):
-        for key, value in kwards.items():
-            self.param[key] = value
 
 
 
@@ -43,8 +42,49 @@ def optSolver_OptimizationHunter(problem, method: Method, options: Option):
             problem.f,
             problem.gradf,
             problem.x0,
-            **method.param,
+            **options.param
+        )
+    elif method.method_name == 'ModifiedNewton':
+        modified_newtown_cholesky(
+            problem.f,
+            problem.gradf,
+            problem.hessianf,
+            problem.x0,
             **options.param
         )
 
+    elif method.method_name == 'NewtonCG':
+        newtown(
+            problem.f,
+            problem.gradf,
+            problem.hessianf,
+            problem.x0,
+            method='cg',
+            **options.param
+        )
+        # need to check if method arg is specified for cg
+
+    elif method.method_name == 'BFGS':
+        BFGS(
+            problem.f,
+            problem.gradf,
+            problem.x0,
+            **options.param
+        )
+
+    elif method.method_name == 'DFP':
+        DFP(
+            problem.f,
+            problem.gradf,
+            problem.x0,
+            **options.param
+        )
+
+    elif method.method_name == 'LBFGS':
+        LBFGS(
+            problem.f,
+            problem.gradf,
+            problem.x0,
+            **options.param
+        )
 
