@@ -224,7 +224,6 @@ def BFGS(
     f: Callable[[NDArray], float],
     gradf: Callable[[NDArray], NDArray],
     x0: NDArray,
-    h0: NDArray,
     output: str,
     line_search: str="armijo",
     max_iter: int = 5000,
@@ -307,10 +306,10 @@ def BFGS(
 
             if line_search == 'armijo':
                 # backtracking search of step length
-                alphak = backtracking_search(f, gradf_xk, xk, pk, alpha0)
+                alphak = backtracking_search(f, gradf_xk, xk, pk, alpha0, **line_search_param)
             elif line_search == 'wolf':
                 # wolf line search of step length
-                alphak = wolf_search(f, gradf, xk, pk)
+                alphak = wolf_search(f, gradf, xk, pk, **line_search_param)
             else:
                 raise ValueError("Line search method must be 'armijo' or 'wolf'!")
             
@@ -442,10 +441,10 @@ def LBFGS(
 
             if line_search == 'armijo':
                 # backtracking search of step length
-                alphak = backtracking_search(f, gradf_xk, xk, pk, alpha0)
+                alphak = backtracking_search(f, gradf_xk, xk, pk, alpha0, **line_search_param)
             elif line_search == 'wolf':
                 # wolf line search of step length
-                alphak = wolf_search(f, gradf, xk, pk)
+                alphak = wolf_search(f, gradf, xk, pk, **line_search_param)
             else:
                 raise ValueError("Line search method must be 'armijo' or 'wolf'!")
             
@@ -507,7 +506,7 @@ def DFP(
     f: Callable[[NDArray], float],
     gradf: Callable[[NDArray], NDArray],
     x0: NDArray,
-    h0: NDArray,
+    h0: NDArray|None,
     output: str,
     line_search: str="armijo",
     max_iter: int = 5000,
@@ -551,6 +550,9 @@ def DFP(
 
         # initialize
         xk = x0
+        # if initial inverse hessain not provided, use idenity matrix
+        if not h0:
+            h0 = np.eye(x0.shape[0])
         f_xk, gradf_xk, h_k = f(xk), gradf(xk), h0
         
 
