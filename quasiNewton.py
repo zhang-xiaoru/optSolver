@@ -367,7 +367,7 @@ def LBFGS(
     f: Callable[[NDArray], float],
     gradf: Callable[[NDArray], NDArray],
     x0: NDArray,
-    m: int,
+    m: int|None,
     output: str,
     line_search: str='armijo',
     max_iter: int = 5000,
@@ -403,6 +403,10 @@ def LBFGS(
     if not os.path.exists(parent_dir):
         os.makedirs(parent_dir)
     start_time = time.perf_counter()
+
+    # if memory size not specified, use minimum between m and problem dimension
+    if not m:
+        m = min(5, x0.shape[0])
 
     with open(output, "w") as file:
         # write file title
