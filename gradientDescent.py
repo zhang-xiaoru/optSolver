@@ -98,6 +98,8 @@ def steepest_descent(
                 alphak = backtracking_search(f, gradf_xk, xk, pk, alpha_init, **line_search_param)
             elif line_search == 'wolf':
                 alphak = wolf_search(f, gradf, xk, pk, **line_search_param)
+            else:
+                raise ValueError()
 
             # record the function value, gradiaent norm and founded step length for current posistion
             file.write(f"{k:<6} {f_xk:<10.2e} {norm_grad:<10.2e} {alphak:<10.2e}\n")

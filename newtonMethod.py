@@ -5,6 +5,7 @@ from lineSearch import backtracking_search, wolf_search
 from conjGrad import cg
 import time
 from tqdm import tqdm
+import os
 
 # def is_converge(gradf_k, threshold):
 #    if np.linalg.norm(gradf_k) <= threshold:
@@ -76,10 +77,20 @@ def newtown(
     Returns:
         tuple(NDArray, float): 
     """
+
     if method not in ['exact', 'cg']:
         raise TypeError("method can only be 'exact' or 'cg'. ")
     elif method == 'cg' and eta is None:
         raise ValueError("tolerance must be specify if method is 'cg'. ")
+    
+    # check if line_search legit
+    if line_search not in {"armijo", "wolf"}:
+        raise ValueError("line_search must be 'armijo' or 'wolf'!")
+    
+    # check if parent dir exists
+    parent_dir = os.path.dirname(output)
+    if not os.path.exists(parent_dir):
+        os.makedirs(parent_dir)
 
     # start timer
     start_time = time.perf_counter()
@@ -100,7 +111,7 @@ def newtown(
                 pk = np.linalg.solve(hessianf_xk, -gradf_xk)
             except np.linalg.LinAlgError:
                 file.write("Terminated due to error")
-                return None
+                return x0, f_xk
         else:
             # use CG to get approximated solution
             pk = cg(hessianf_xk, -gradf_xk, np.zeros(x0.shape[0]), eta)
@@ -142,7 +153,7 @@ def newtown(
                     pk = np.linalg.solve(hessianf_xk, -gradf_xk)
                 except np.linalg.LinAlgError:
                     file.write("Terminated due to error")
-                    return None
+                    return x0, f_xk
             else:
                 pk = cg(hessianf_xk, -gradf_xk, np.zeros(x0.shape[0]), eta)
 
@@ -202,6 +213,15 @@ def modified_newtown_cholesky(
     Returns:
         tuple[NDArray, float]: _description_
     """    
+
+    # check if line_search legit
+    if line_search not in {"armijo", "wolf"}:
+        raise ValueError("line_search must be 'armijo' or 'wolf'!")
+    
+    # check if parent dir exists
+    parent_dir = os.path.dirname(output)
+    if not os.path.exists(parent_dir):
+        os.makedirs(parent_dir)
     # start timeer
     start_time = time.perf_counter()
 

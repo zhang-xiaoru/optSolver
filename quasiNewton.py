@@ -4,6 +4,7 @@ from typing import Callable
 import time
 from tqdm import tqdm
 from lineSearch import backtracking_search, wolf_search
+import os
 
 def L_BFGS_double_loop_search(
     gradf_xk: NDArray,
@@ -248,7 +249,16 @@ def BFGS(
 
     Returns:
         None
-    """    
+    """  
+
+    # check if line_search legit
+    if line_search not in {"armijo", "wolf"}:
+        raise ValueError("line_search must be 'armijo' or 'wolf'!")
+    
+    # check if parent dir exists
+    parent_dir = os.path.dirname(output)
+    if not os.path.exists(parent_dir):
+        os.makedirs(parent_dir)  
     start_time = time.perf_counter()
 
     with open(output, "w") as file:
@@ -384,6 +394,15 @@ def LBFGS(
     Returns:
         None
     """    
+
+    # check if line_search legit
+    if line_search not in {"armijo", "wolf"}:
+        raise ValueError("line_search must be 'armijo' or 'wolf'!")
+    
+    # check if parent dir exists
+    parent_dir = os.path.dirname(output)
+    if not os.path.exists(parent_dir):
+        os.makedirs(parent_dir)
     start_time = time.perf_counter()
 
     with open(output, "w") as file:
@@ -513,7 +532,16 @@ def DFP(
 
     Returns:
         None
-    """    
+    """ 
+
+    # check if line_search legit
+    if line_search not in {"armijo", "wolf"}:
+        raise ValueError("line_search must be 'armijo' or 'wolf'!")
+    
+    # check if parent dir exists
+    parent_dir = os.path.dirname(output)
+    if not os.path.exists(parent_dir):
+        os.makedirs(parent_dir)   
     start_time = time.perf_counter()
 
     with open(output, "w") as file:
