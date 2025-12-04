@@ -24,7 +24,7 @@ class Quadratic:
         np.random.seed(seed)
 
         # generate q
-        self.q = np.random.randn(self.n, 1)
+        self.q = np.random.randn(self.n)
 
         # generate Q matrix with specified conditional number
         U, _ = np.linalg.qr(np.random.randn(n, n))

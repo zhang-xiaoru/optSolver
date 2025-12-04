@@ -28,7 +28,8 @@ def steepest_descent(
     max_iter: int=5000,
     conv_threshold: float=1e-8,
     alpha0: float=1,
-) -> None:
+    **line_search_param
+) -> tuple[NDArray, float]:  
     """Steepest decent methods with backtracking line search methods
 
     Args:
@@ -40,10 +41,17 @@ def steepest_descent(
         max_iter (int, optional): Maximum iteration number. Defaults to 5000.
         conv_threshold (float, optional): Convergent threshold. Defaults to 1e-6.
         alpha0 (float, optional): Initial guess of first step length search. Defaults to 1.
+        line_search_param: additional parameters for line search methods
 
     Returns:
-        None
-    """    
+        tuple[float, float]: return optimal solution and minimized objective function value 
+        
+    """  
+      
+    # check if line_search legit
+    if line_search not in {"armijo", "wolf"}:
+        raise ValueError("line_search must be 'armijo' or 'wolf'!")
+
     # record start time of the program
     start_time = time.perf_counter()
    
@@ -81,9 +89,9 @@ def steepest_descent(
             
             if line_search == 'armijo':
                 # use Armijo backtracking algo to find step length
-                alphak = backtracking_search(f, gradf_xk, xk, pk, alpha_init)
+                alphak = backtracking_search(f, gradf_xk, xk, pk, alpha_init, **line_search_param)
             elif line_search == 'wolf':
-                alphak = wolf_search(f, gradf, xk, pk)
+                alphak = wolf_search(f, gradf, xk, pk, **line_search_param)
 
             # record the function value, gradiaent norm and founded step length for current posistion
             file.write(f"{k:<6} {f_xk:<10.2e} {norm_grad:<10.2e} {alphak:<10.2e}\n")
@@ -115,4 +123,4 @@ def steepest_descent(
             f"Optimized objective function value: {f_xk:.2e}. Computing time: {end_time - start_time:.3f} s.\n"
         )
 
-    return None
+    return xk, f_xk
