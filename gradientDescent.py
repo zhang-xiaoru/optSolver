@@ -29,8 +29,9 @@ def steepest_descent(
     max_iter: int=5000,
     conv_threshold: float=1e-8,
     alpha0: float=1,
+    cpu_time_max: int=600,
     **line_search_param
-) -> tuple[NDArray, float]:  
+) -> tuple[NDArray, float, int, float]:  
     """Steepest decent methods with backtracking line search methods
 
     Args:
@@ -118,17 +119,26 @@ def steepest_descent(
             f_xk, gradf_xk = f_next, gradf(xk)
             pk = -gradf_xk
 
+            if k % 10 == 0:
+                cpu_time = time.perf_counter() - start_time
+                if cpu_time > cpu_time_max:
+                    file.write(f"Terminated as maximum CPU time {cpu_time_max}s has been reached.")
+                    print(f"Terminated as maximum CPU time {cpu_time_max}s has been reached.")
+                    return xk, f_xk, k, cpu_time
+
+
         end_time = time.perf_counter()
+        cpu_time = end_time - start_time
         if k == max_iter:
             # check if the iteration reaches maximum
             file.write("Terminated as maximum iteration archived.\n")
             print("Terminated as maximum iteration archived.")
 
         file.write(
-            f"Optimized objective function value: {f_xk:.2e}. Computing time: {end_time - start_time:.3f} s."
+            f"Optimized objective function value: {f_xk:.2e}. Computing time: {cpu_time:.3f} s."
         )
         print(
-            f"Optimized objective function value: {f_xk:.2e}. Computing time: {end_time - start_time:.3f} s.\n"
+            f"Optimized objective function value: {f_xk:.2e}. Computing time: {cpu_time:.3f} s.\n"
         )
 
-    return xk, f_xk
+    return xk, f_xk, k, cpu_time
