@@ -228,7 +228,7 @@ def BFGS(
     cpu_time_max: int = 600,
     alpha0: float=1,
     **line_search_param
-) -> tuple[NDArray, float]:
+) -> tuple[NDArray, float, float|np.floating, int, float]:
     """implementation of BFGS methods with Wolf line search
 
     Args:
@@ -366,21 +366,20 @@ def BFGS(
                 )
                 break
 
-        end_time = time.perf_counter()
 
         # check if the program end due to maximum iteration achived
-        if k == max_iter:
+        if k == max_iter and cpu_time < cpu_time_max:
             file.write("Terminated as maximum iteration archived.\n")
             print("Terminated as maximum iteration archived.")
 
         file.write(
-            f"Optimized objective function value: {f_xk:.2e}. Computing time: {end_time - start_time:.3f} s."
+            f"Optimized objective function value: {f_xk:.2e}; |gradf|: {norm_grad:.2e}. Computing time: {cpu_time:.3f} s."
         )
         print(
-            f"Optimized objective function value: {f_xk:.2e}. Computing time: {end_time - start_time:.3f} s.\n"
+            f"Optimized objective function value: {f_xk:.2e}; |gradf|: {norm_grad:.2e}. Computing time: {cpu_time:.3f} s.\n"
         )
 
-    return xk, f_xk
+    return xk, f_xk, norm_grad, k, cpu_time
 
 def LBFGS(
     f: Callable[[NDArray], float],
@@ -395,7 +394,7 @@ def LBFGS(
     cpu_time_max: int = 600,
     alpha0: float=1,
     **line_search_param
-) -> tuple[NDArray, float]:
+) -> tuple[NDArray, float, float|np.floating, int, float]:
     """implemntation of LBFGS methods
 
     Args:
@@ -525,21 +524,20 @@ def LBFGS(
                 )
                 break
 
-        end_time = time.perf_counter()
 
         # check if the program end due to maximum iteration achived
-        if k == max_iter:
+        if k == max_iter and cpu_time < cpu_time_max:
             file.write("Terminated as maximum iteration archived.\n")
             print("Terminated as maximum iteration archived.")
 
         file.write(
-            f"Optimized objective function value: {f_xk:.2e}. Computing time: {end_time - start_time:.3f} s."
+            f"Optimized objective function value: {f_xk:.2e}; |gradf|: {norm_grad:.2e}. Computing time: {cpu_time:.3f} s."
         )
         print(
-            f"Optimized objective function value: {f_xk:.2e}. Computing time: {end_time - start_time:.3f} s.\n"
+            f"Optimized objective function value: {f_xk:.2e}; |gradf|: {norm_grad:.2e}. Computing time: {cpu_time:.3f} s.\n"
         )
 
-    return xk, f_xk
+    return xk, f_xk, norm_grad, k, cpu_time
 
 
 def DFP(
@@ -668,18 +666,17 @@ def DFP(
                 )
                 break
 
-        end_time = time.perf_counter()
 
         # check if the program end due to maximum iteration achived
-        if k == max_iter:
+        if k == max_iter and cpu_time < cpu_time_max:
             file.write("Terminated as maximum iteration archived.\n")
             print("Terminated as maximum iteration archived.")
 
         file.write(
-            f"Optimized objective function value: {f_xk:.2e}. Computing time: {end_time - start_time:.3f} s."
+            f"Optimized objective function value: {f_xk:.2e}; |gradf|: {norm_grad:.2e}. Computing time: {cpu_time:.3f} s."
         )
         print(
-            f"Optimized objective function value: {f_xk:.2e}. Computing time: {end_time - start_time:.3f} s.\n"
+            f"Optimized objective function value: {f_xk:.2e}; |gradf|: {norm_grad:.2e}. Computing time: {cpu_time:.3f} s.\n"
         )
 
     return xk, f_xk

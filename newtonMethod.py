@@ -157,11 +157,12 @@ def newtown(
             else:
                 pk = cg(hessianf_xk, -gradf_xk, np.zeros(x0.shape[0]), eta)
 
-            cpu_time = time.perf_counter() - start_time
-            if cpu_time > cpu_time_max:
-                file.write(f"Terminated as maximum CPU time {cpu_time_max}s has been reached.")
-                print(f"Terminated as maximum CPU time {cpu_time_max}s has been reached.")
-                break
+            if k % 10 == 0:
+                cpu_time = time.perf_counter() - start_time
+                if cpu_time > cpu_time_max:
+                    file.write(f"Terminated as maximum CPU time {cpu_time_max}s has been reached.")
+                    print(f"Terminated as maximum CPU time {cpu_time_max}s has been reached.")
+                    break
 
         end_time = time.perf_counter()
         
@@ -191,8 +192,9 @@ def modified_newtown_cholesky(
     conv_threshold: float = 1e-8,
     beta: float=1e-4,
     alpha0: float = 1,
+    cpu_time_max: int=600,
     **line_search_param
-) -> tuple[NDArray, float]:
+) -> tuple[NDArray, float, float|np.floating, int, float]:
     """_summary_
 
     Args:
@@ -278,18 +280,22 @@ def modified_newtown_cholesky(
             delta = cholesky_adding(hessianf_xk, beta)
             pk = np.linalg.solve(hessianf_xk + delta * np.identity(n_dim), -gradf_xk)
 
-        end_time = time.perf_counter()
+            cpu_time = time.perf_counter() - start_time
+            if cpu_time > cpu_time_max:
+                file.write(f"Terminated as maximum CPU time {cpu_time_max}s has been reached.")
+                print(f"Terminated as maximum CPU time {cpu_time_max}s has been reached.")
+
         
         # check if the programme end due to maximum iteration reached
-        if k == max_iter:
+        if k == max_iter and cpu_time < cpu_time_max:
             file.write("Terminated as maximum iteration archived.\n")
             print("Terminated as maximum iteration archived.")
 
         file.write(
-            f"Optimized objective function value: {f_xk:.2e}. Computing time: {end_time - start_time:.3f} s."
+            f"Optimized objective function value: {f_xk:.2e}; |gradf|: {norm_grad:.2e}. Computing time: {cpu_time:.3f} s."
         )
         print(
-            f"Optimized objective function value: {f_xk:.2e}. Computing time: {end_time - start_time:.3f} s.\n"
+            f"Optimized objective function value: {f_xk:.2e}; |gradf|: {norm_grad:.2e}. Computing time: {cpu_time:.3f} s.\n"
         )
 
-    return xk, f_xk
+    return xk, f_xk, norm_grad, k, cpu_time
