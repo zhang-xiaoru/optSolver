@@ -20,7 +20,9 @@ class Method:
         self.param  = {}
 
         if line_search:
-            self.param["line_search"] = line_search
+            self.line_search = line_search
+        else:
+            self.line_search = 'armijo'
 
 
 
@@ -42,6 +44,7 @@ def optSolver_OptimizationHunter(problem, method: Method, options: Option):
             problem.f,
             problem.gradf,
             problem.x0,
+            line_search=method.line_search,
             **options.param
         )
     elif method.method_name == 'ModifiedNewton':
@@ -50,6 +53,7 @@ def optSolver_OptimizationHunter(problem, method: Method, options: Option):
             problem.gradf,
             problem.hessianf,
             problem.x0,
+            line_search=method.line_search,
             **options.param
         )
 
@@ -60,6 +64,7 @@ def optSolver_OptimizationHunter(problem, method: Method, options: Option):
             problem.hessianf,
             problem.x0,
             method='cg',
+            line_search=method.line_search,
             **options.param
         )
         # need to check if method arg is specified for cg
@@ -69,6 +74,7 @@ def optSolver_OptimizationHunter(problem, method: Method, options: Option):
             problem.f,
             problem.gradf,
             problem.x0,
+            line_search=method.line_search,
             **options.param
         )
 
@@ -77,6 +83,7 @@ def optSolver_OptimizationHunter(problem, method: Method, options: Option):
             problem.f,
             problem.gradf,
             problem.x0,
+            line_search=method.line_search,
             **options.param
         )
 
@@ -85,6 +92,7 @@ def optSolver_OptimizationHunter(problem, method: Method, options: Option):
             problem.f,
             problem.gradf,
             problem.x0,
+            line_search=method.line_search,
             **options.param
         )
 
