@@ -332,6 +332,7 @@ class Exp:
 
         hessian = np.zeros((self.n, self.n))
 
+        hessian[0, 0] = 2 * (3 * np.exp(2 * x[0]) + np.exp(x[0])) / np.power(np.exp(x[0] + 1), 3)
         hessian[1:, 1:] = np.diag(12 * np.square(x[1:] - 1))
 
         return hessian
@@ -414,7 +415,7 @@ class Genhumps:
         Returns:
             NDArray: _description_
         """
-        hessian = np.zeros((4, 4))
+        hessian = np.zeros((5, 5))
         hessian[0, 0] = (
             8 * np.sin(2 * x[1]) ** 2 * (np.cos(2 * x[0]) ** 2 - np.sin(2 * x[0]) ** 2)
             + 0.1
