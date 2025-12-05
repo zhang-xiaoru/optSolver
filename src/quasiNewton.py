@@ -3,7 +3,7 @@ from numpy.typing import NDArray
 from typing import Callable
 import time
 from tqdm import tqdm
-from lineSearch import backtracking_search, wolf_search
+from src.lineSearch import backtracking_search, wolf_search
 import os
 
 def L_BFGS_double_loop_search(
@@ -310,6 +310,17 @@ def BFGS(
                 )
                 break
 
+            # end if maximum cpu time reached
+            cpu_time = time.perf_counter() - start_time
+            if cpu_time > cpu_time_max:
+                file.write(
+                    f"Terminated as maximum CPU time {cpu_time_max}s has been reached."
+                )
+                print(
+                    f"Terminated as maximum CPU time {cpu_time_max}s has been reached."
+                )
+                break
+
             if end_pointer < loop_iter_num:
                 pk = L_BFGS_double_loop_search(
                     gradf_xk, s_list, rho_list, y_list, end_pointer, end_pointer
@@ -355,16 +366,6 @@ def BFGS(
                     V = idt - 1 / rhok_inv * np.outer(sk, yk)
                     h_k = V @ h_k @ V.T + 1 / rhok_inv * np.outer(sk, sk)
 
-            cpu_time = time.perf_counter() - start_time
-            #stop iteration of maximum cpu time has achived
-            if cpu_time > cpu_time_max:
-                file.write(
-                    f"Terminated as maximum CPU time {cpu_time_max}s has been reached."
-                )
-                print(
-                    f"Terminated as maximum CPU time {cpu_time_max}s has been reached."
-                )
-                break
 
 
         # check if the program end due to maximum iteration achived
@@ -477,6 +478,17 @@ def LBFGS(
                     f"Terminated at iteration={k} as |gradf|={norm_grad:.2e} < threshold={conv_condition:.2e}.\n"
                 )
                 break
+            
+            # end if maximum cpu time reached
+            cpu_time = time.perf_counter() - start_time
+            if cpu_time > cpu_time_max:
+                file.write(
+                    f"Terminated as maximum CPU time {cpu_time_max}s has been reached."
+                )
+                print(
+                    f"Terminated as maximum CPU time {cpu_time_max}s has been reached."
+                )
+                break
 
             # compute search direction
             pk = L_BFGS_double_loop_search(
@@ -514,15 +526,7 @@ def LBFGS(
                 end_pointer = (end_pointer + 1) % m
                 tol_counter += 1
 
-            cpu_time = time.perf_counter() - start_time
-            if cpu_time > cpu_time_max:
-                file.write(
-                    f"Terminated as maximum CPU time {cpu_time_max}s has been reached."
-                )
-                print(
-                    f"Terminated as maximum CPU time {cpu_time_max}s has been reached."
-                )
-                break
+
 
 
         # check if the program end due to maximum iteration achived
@@ -553,7 +557,7 @@ def DFP(
     cpu_time_max: int = 600,
     alpha0: float=1,
     **line_search_param
-) -> tuple[NDArray, float]:
+) -> tuple[NDArray, float, np.floating, int, float]:
     """implementation of BFGS methods with Wolf line search
 
     Args:
@@ -625,6 +629,18 @@ def DFP(
                 )
                 break
 
+            #stop iteration of maximum cpu time has achived
+            cpu_time = time.perf_counter() - start_time
+            if cpu_time > cpu_time_max:
+                file.write(
+                    f"Terminated as maximum CPU time {cpu_time_max}s has been reached."
+                )
+                print(
+                    f"Terminated as maximum CPU time {cpu_time_max}s has been reached."
+                )
+                break
+
+
             # compute search direction
             pk = - np.dot(h_k, gradf_xk)
 
@@ -655,16 +671,8 @@ def DFP(
             if rhok_inv > epsilon * np.linalg.norm(yk) * np.linalg.norm(sk):
                 h_k = h_k - np.outer(np.dot(h_k, yk), np.dot(yk, h_k)) / np.dot(yk, np.dot(h_k, yk)) + np.outer(sk, sk) * 1 / rhok_inv
 
-            cpu_time = time.perf_counter() - start_time
-            #stop iteration of maximum cpu time has achived
-            if cpu_time > cpu_time_max:
-                file.write(
-                    f"Terminated as maximum CPU time {cpu_time_max}s has been reached."
-                )
-                print(
-                    f"Terminated as maximum CPU time {cpu_time_max}s has been reached."
-                )
-                break
+
+
 
 
         # check if the program end due to maximum iteration achived
@@ -679,4 +687,4 @@ def DFP(
             f"Optimized objective function value: {f_xk:.2e}; |gradf|: {norm_grad:.2e}. Computing time: {cpu_time:.3f} s.\n"
         )
 
-    return xk, f_xk
+    return xk, f_xk, norm_grad, k, cpu_time

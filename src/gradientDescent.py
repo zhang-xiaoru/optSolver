@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.typing import NDArray
-from lineSearch import backtracking_search, wolf_search
+from src.lineSearch import backtracking_search, wolf_search
 import time
 from tqdm import tqdm
 from typing import Callable
@@ -93,6 +93,17 @@ def steepest_descent(
                     f"Terminated as iteration={k} as |gradf|={norm_grad:.2e} < threshold={conv_condition:.2e}.\n"
                 )
                 break
+
+            # end if maximum cpu time reached
+            cpu_time = time.perf_counter() - start_time
+            if cpu_time > cpu_time_max:
+                file.write(
+                    f"Terminated as maximum CPU time {cpu_time_max}s has been reached."
+                )
+                print(
+                    f"Terminated as maximum CPU time {cpu_time_max}s has been reached."
+                )
+                break
             
             if line_search == 'armijo':
                 # use Armijo backtracking algo to find step length
@@ -119,10 +130,6 @@ def steepest_descent(
             f_xk, gradf_xk = f_next, gradf(xk)
             pk = -gradf_xk
 
-            cpu_time = time.perf_counter() - start_time
-            if cpu_time > cpu_time_max:
-                file.write(f"Terminated as maximum CPU time {cpu_time_max}s has been reached.")
-                print(f"Terminated as maximum CPU time {cpu_time_max}s has been reached.")
 
 
         if k == max_iter and cpu_time < cpu_time_max:

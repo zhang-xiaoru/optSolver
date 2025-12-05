@@ -1,6 +1,8 @@
-from gradientDescent import steepest_descent
-from newtonMethod import newtown, modified_newtown_cholesky
-from quasiNewton import BFGS, LBFGS, DFP
+from src.gradientDescent import steepest_descent
+from src.newtonMethod import newtown, modified_newtown_cholesky
+from src.quasiNewton import BFGS, LBFGS, DFP
+from numpy.typing import NDArray
+import numpy as np
 
 class Method:
     VALID_METHODS={
@@ -38,9 +40,9 @@ class Option:
             self.param[key] = value
 
 
-def optSolver_OptimizationHunter(problem, method: Method, options: Option):
+def optSolver_OptimizationHunter(problem, method: Method, options: Option) -> tuple[NDArray, float, float|np.floating, int, float]:
     if method.method_name == "GD":
-        steepest_descent(
+        result = steepest_descent(
             problem.f,
             problem.gradf,
             problem.x0,
@@ -48,7 +50,7 @@ def optSolver_OptimizationHunter(problem, method: Method, options: Option):
             **options.param
         )
     elif method.method_name == 'ModifiedNewton':
-        modified_newtown_cholesky(
+        result = modified_newtown_cholesky(
             problem.f,
             problem.gradf,
             problem.hessianf,
@@ -58,7 +60,7 @@ def optSolver_OptimizationHunter(problem, method: Method, options: Option):
         )
 
     elif method.method_name == 'NewtonCG':
-        newtown(
+        result = newtown(
             problem.f,
             problem.gradf,
             problem.hessianf,
@@ -70,7 +72,7 @@ def optSolver_OptimizationHunter(problem, method: Method, options: Option):
         # need to check if method arg is specified for cg
 
     elif method.method_name == 'BFGS':
-        BFGS(
+        result = BFGS(
             problem.f,
             problem.gradf,
             problem.x0,
@@ -79,7 +81,7 @@ def optSolver_OptimizationHunter(problem, method: Method, options: Option):
         )
 
     elif method.method_name == 'DFP':
-        DFP(
+        result = DFP(
             problem.f,
             problem.gradf,
             problem.x0,
@@ -88,11 +90,12 @@ def optSolver_OptimizationHunter(problem, method: Method, options: Option):
         )
 
     elif method.method_name == 'LBFGS':
-        LBFGS(
+        result = LBFGS(
             problem.f,
             problem.gradf,
             problem.x0,
             line_search=method.line_search,
             **options.param
         )
+    return result
 

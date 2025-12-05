@@ -1,5 +1,5 @@
 from optimizer import Method, Option, optSolver_OptimizationHunter
-from objectives import Quadratic, Quadratic2, Rosenbrock, DataFit, Exp, Genhumps
+from testing.objectives import Quadratic, Quadratic2, Rosenbrock, DataFit, Exp, Genhumps
 import numpy as np
 
 np.random.seed(0)
@@ -80,12 +80,16 @@ method_name_list = [
 # set up solver parameters
 #option = Option()
 
-GD = Method(name='GD', line_search='armijo')
+GD = Method(name='ModifiedNewton', line_search="armijo")
 
-for problem in problems:
-    output = f'./output/{problem.name}/GD.txt'
-    option = Option()
-    option.set_option_params(
-        output=output
-    )
+#for problem in problems:
+problem = problems[10]
+output = f'./output/{problem.name}/{GD.method_name}_{GD.line_search}.txt'
+option = Option()
+option.set_option_params(
+    output=output
+)
+try:
     optSolver_OptimizationHunter(problem, GD, option)
+except Exception as e:
+    print(f"{problem.name} fails with error{e}\n")

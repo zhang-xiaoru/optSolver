@@ -1,8 +1,8 @@
 import numpy as np
 from numpy.typing import NDArray
 from typing import Callable
-from lineSearch import backtracking_search, wolf_search
-from conjGrad import cg
+from src.lineSearch import backtracking_search, wolf_search
+from src.conjGrad import cg
 import time
 from tqdm import tqdm
 import os
@@ -59,7 +59,7 @@ def newtown(
     cpu_time_max: int = 600,
     alpha0: float = 1,
     **line_search_param
-) -> tuple[NDArray, float]:
+) -> tuple[NDArray, float, float|np.floating, int, float]:
     """Direct Newton's methods
 
     Args:
@@ -111,7 +111,7 @@ def newtown(
                 pk = np.linalg.solve(hessianf_xk, -gradf_xk)
             except np.linalg.LinAlgError:
                 file.write("Terminated due to error")
-                return x0, f_xk
+                return x0, f_xk, np.linalg.norm(gradf_xk), 0, 0
         else:
             # use CG to get approximated solution
             pk = cg(hessianf_xk, -gradf_xk, np.zeros(x0.shape[0]), eta)
@@ -133,6 +133,13 @@ def newtown(
                 )
                 break
 
+            # finish if cpu maximum time has been reached
+            cpu_time = time.perf_counter() - start_time
+            if cpu_time > cpu_time_max:
+                file.write(f"Terminated as maximum CPU time {cpu_time_max}s has been reached.")
+                print(f"Terminated as maximum CPU time {cpu_time_max}s has been reached.")
+                break
+
             if line_search == 'armijo':
                 alphak = backtracking_search(f, gradf_xk, xk, pk, alpha0, **line_search_param)
             elif line_search == 'wolf':
@@ -149,36 +156,36 @@ def newtown(
 
             # update descent directions
             if method == 'exact':
-                try:
-                    pk = np.linalg.solve(hessianf_xk, -gradf_xk)
-                except np.linalg.LinAlgError:
-                    file.write("Terminated due to error")
-                    return x0, f_xk
-            else:
-                pk = cg(hessianf_xk, -gradf_xk, np.zeros(x0.shape[0]), eta)
 
-            if k % 10 == 0:
                 cpu_time = time.perf_counter() - start_time
                 if cpu_time > cpu_time_max:
                     file.write(f"Terminated as maximum CPU time {cpu_time_max}s has been reached.")
                     print(f"Terminated as maximum CPU time {cpu_time_max}s has been reached.")
                     break
+                try:
+                    pk = np.linalg.solve(hessianf_xk, -gradf_xk)
+                except np.linalg.LinAlgError:
+                    file.write("Terminated due to error")
+                    return x0, f_xk, norm_grad, k, cpu_time
+            else:
+                pk = cg(hessianf_xk, -gradf_xk, np.zeros(x0.shape[0]), eta)
 
-        end_time = time.perf_counter()
+
+
         
         # check if the program end due to maximum iteration achived
-        if k == max_iter:
+        if k == max_iter and cpu_time < cpu_time_max:
             file.write("Terminated as maximum iteration archived.\n")
             print("Terminated as maximum iteration archived.")
 
         file.write(
-            f"Optimized objective function value: {f_xk:.2e}. Computing time: {end_time - start_time:.3f} s."
+            f"Optimized objective function value: {f_xk:.2e}. Computing time: {cpu_time:.3f} s."
         )
         print(
-            f"Optimized objective function value: {f_xk:.2e}. Computing time: {end_time - start_time:.3f} s.\n"
+            f"Optimized objective function value: {f_xk:.2e}. Computing time: {cpu_time:.3f} s.\n"
         )
 
-    return xk, f_xk
+    return xk, f_xk, norm_grad, k, cpu_time
 
 
 def modified_newtown_cholesky(
@@ -259,6 +266,12 @@ def modified_newtown_cholesky(
                     f"Terminated at iteration={k} as |gradf|={norm_grad:.2e} < threshold={conv_condition:.2e}.\n"
                 )
                 break
+            
+            # end if cpu maximum time reached
+            cpu_time = time.perf_counter() - start_time
+            if cpu_time > cpu_time_max:
+                file.write(f"Terminated as maximum CPU time {cpu_time_max}s has been reached.")
+                print(f"Terminated as maximum CPU time {cpu_time_max}s has been reached.")
 
             if line_search == 'armijo':
                 # backtracking search of step length
@@ -280,10 +293,7 @@ def modified_newtown_cholesky(
             delta = cholesky_adding(hessianf_xk, beta)
             pk = np.linalg.solve(hessianf_xk + delta * np.identity(n_dim), -gradf_xk)
 
-            cpu_time = time.perf_counter() - start_time
-            if cpu_time > cpu_time_max:
-                file.write(f"Terminated as maximum CPU time {cpu_time_max}s has been reached.")
-                print(f"Terminated as maximum CPU time {cpu_time_max}s has been reached.")
+
 
         
         # check if the programme end due to maximum iteration reached
