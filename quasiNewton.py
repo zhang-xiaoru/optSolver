@@ -12,7 +12,7 @@ def L_BFGS_double_loop_search(
     rho_list: NDArray,
     y_list: NDArray,
     k: int,
-    start_pointer: int,
+    end_pointer: int,
 ) -> NDArray:
     """ double loop search methods for finding descent directions in L_BFGS. The s_list is updated in loops to keep he s_list same size
 
@@ -33,32 +33,28 @@ def L_BFGS_double_loop_search(
     alpha_list = np.zeros(m)
     
     # backward iterations, if k < m, then the list has not yet been fully filled
-    for i in range(min(k, m) - 1, -1, -1):
+    for i in range(1, min(k, m) + 1):
         # iterate pointer in cycle of the list len
-        current_pointer = (i + start_pointer) % m
+        current_pointer = (end_pointer - i) % m
         alpha_list[current_pointer] = rho_list[current_pointer] * np.dot(
             s_list[current_pointer], q
         )
         q = q - alpha_list[current_pointer] * y_list[current_pointer]
 
-    if k >m :
-        prev_step_idx = (min(k, m) - 1 + start_pointer) % m
-        r = (
-            1
-            / (
-                np.dot(y_list[prev_step_idx], y_list[prev_step_idx])
-                * rho_list[prev_step_idx]
-            )
-            * np.identity(n)
-            @ q
+
+    prev_step_idx = (end_pointer - 1) % m
+    r = (
+        1 
+        / (
+            np.dot(y_list[prev_step_idx], y_list[prev_step_idx])
+            * rho_list[prev_step_idx]
         )
-    else:
-        # if it is the first steps, initialize h
-        r = 1 * np.identity(n) @ q
-    
+        * np.identity(n)
+        @ q
+    )
     # forward loop
-    for i in range(min(k, m)):
-        current_pointer = (i + start_pointer) % m
+    for i in range(min(k, m), 0, -1):
+        current_pointer = (end_pointer - i) % m
         beta = rho_list[current_pointer] * np.dot(y_list[current_pointer], r)
         r = r + s_list[current_pointer] * (alpha_list[current_pointer] - beta)
 
@@ -272,8 +268,29 @@ def BFGS(
         s_list = np.zeros((loop_iter_num, x0.shape[0]))
         y_list = np.zeros((loop_iter_num, x0.shape[0]))
         rho_list = np.zeros(loop_iter_num)
-        start_pointer = 0
+        end_pointer = 0
         idt = np.eye(x0.shape[0])
+
+        # initialize inverse hessian with rescaled weight
+        if line_search == 'armijo':
+            # backtracking search of step length
+            alphak = backtracking_search(f, gradf_xk, xk, -gradf_xk, alpha0, **line_search_param)
+        elif line_search == 'wolf':
+            # wolf line search of step length
+            alphak = wolf_search(f, gradf, xk, -gradf_xk, **line_search_param)
+        else:
+            raise ValueError("Line search method must be 'armijo' or 'wolf'!")
+        x_prev = xk
+        gradf_prev = gradf_xk
+        xk = xk + alphak * gradf_xk
+        gradf_xk = gradf(xk)
+        sk = xk - x_prev
+        yk = gradf_xk - gradf_prev
+        s_list[0] = sk
+        y_list[0] = yk
+        rho_list[0] = 1 / np.dot(sk, yk)
+        end_pointer += 1
+
         
 
         # gradient convergent condition
@@ -293,12 +310,12 @@ def BFGS(
                 )
                 break
 
-            if k < loop_iter_num:
+            if end_pointer < loop_iter_num:
                 pk = L_BFGS_double_loop_search(
-                    gradf_xk, s_list, rho_list, y_list, k - 1, start_pointer
+                    gradf_xk, s_list, rho_list, y_list, end_pointer, end_pointer
                 )
             else:
-                if k == loop_iter_num:
+                if end_pointer == loop_iter_num:
                     h_k = construct_hessian(s_list, y_list, rho_list)
                 pk = - np.dot(h_k, gradf_xk)
 
@@ -324,17 +341,19 @@ def BFGS(
 
             sk = xk - x_prev
             yk = gradf_xk - gradf_prev
-            rhok = 1 / np.dot(yk, sk)
+            rhok_inv = np.dot(yk, sk)
+            #rhok = 1 / np.dot(yk, sk)
             
             # update H only when y.T s is positive enough, so that the updated H is PD
-            if 1 / rhok > epsilon * np.linalg.norm(yk) * np.linalg.norm(sk):
-                if k < loop_iter_num:
-                    s_list[k - 1, :] = sk
-                    y_list[k - 1, :] = yk
-                    rho_list[k - 1] = rhok
+            if rhok_inv > epsilon * np.linalg.norm(yk) * np.linalg.norm(sk):
+                if end_pointer < loop_iter_num:
+                    s_list[end_pointer, :] = sk
+                    y_list[end_pointer, :] = yk
+                    rho_list[end_pointer] = 1 / rhok_inv
+                    end_pointer += 1
                 else:
-                    V = idt - rhok * np.outer(sk, yk)
-                    h_k = V @ h_k @ V.T + rhok * np.outer(sk, sk)
+                    V = idt - 1 / rhok_inv * np.outer(sk, yk)
+                    h_k = V @ h_k @ V.T + 1 / rhok_inv * np.outer(sk, sk)
 
             cpu_time = time.perf_counter() - start_time
             #stop iteration of maximum cpu time has achived
@@ -367,8 +386,8 @@ def LBFGS(
     f: Callable[[NDArray], float],
     gradf: Callable[[NDArray], NDArray],
     x0: NDArray,
-    m: int|None,
     output: str,
+    m: int|None=None,
     line_search: str='armijo',
     max_iter: int = 5000,
     epsilon: float = 1e-8,
@@ -419,7 +438,29 @@ def LBFGS(
         s_list = np.zeros((m, x0.shape[0]))
         y_list = np.zeros((m, x0.shape[0]))
         rho_list = np.zeros(m)
-        start_pointer = 0
+        end_pointer = 0
+        tol_counter = 0
+        
+        # initialize inverse hessian with rescaled weight
+        if line_search == 'armijo':
+            # backtracking search of step length
+            alphak = backtracking_search(f, gradf_xk, xk, -gradf_xk, alpha0, **line_search_param)
+        elif line_search == 'wolf':
+            # wolf line search of step length
+            alphak = wolf_search(f, gradf, xk, -gradf_xk, **line_search_param)
+        else:
+            raise ValueError("Line search method must be 'armijo' or 'wolf'!")
+        x_prev = xk
+        gradf_prev = gradf_xk
+        xk = xk + alphak * gradf_xk
+        gradf_xk = gradf(xk)
+        sk = xk - x_prev
+        yk = gradf_xk - gradf_prev
+        s_list[0] = sk
+        y_list[0] = yk
+        rho_list[0] = 1 / np.dot(sk, yk)
+        end_pointer += 1
+        tol_counter += 1
 
         # gradient convergent condition
         conv_condition = conv_threshold * max(1, np.linalg.norm(gradf_xk))
@@ -440,7 +481,7 @@ def LBFGS(
 
             # compute search direction
             pk = L_BFGS_double_loop_search(
-                gradf_xk, s_list, rho_list, y_list, k - 1, start_pointer
+                gradf_xk, s_list, rho_list, y_list, tol_counter, end_pointer
             )
 
             if line_search == 'armijo':
@@ -463,21 +504,16 @@ def LBFGS(
 
             sk = xk - x_prev
             yk = gradf_xk - gradf_prev
-            rhok = 1 / np.dot(yk, sk)
+            rhok_inv = np.dot(yk, sk)
             
             # update only when yTs is positive
-            if 1 / rhok > epsilon * np.linalg.norm(yk) * np.linalg.norm(sk):
+            if rhok_inv > epsilon * np.linalg.norm(yk) * np.linalg.norm(sk):
                 # if iteration steps is less than memory, initialized the memory list step by step
-                if k - 1 < m:
-                    s_list[k - 1, :] = sk
-                    y_list[k - 1, :] = yk
-                    rho_list[k - 1] = rhok
-                # if teration steps is more than memory, cycle through the list to update the necessary memory
-                else:
-                    start_pointer = k % m
-                    s_list[start_pointer - 1, :] = sk
-                    y_list[start_pointer - 1, :] = yk
-                    rho_list[start_pointer - 1] = rhok
+                s_list[end_pointer, :] = sk
+                y_list[end_pointer, :] = yk
+                rho_list[end_pointer] = 1 / rhok_inv
+                end_pointer = (end_pointer + 1) % m
+                tol_counter += 1
 
             cpu_time = time.perf_counter() - start_time
             if cpu_time > cpu_time_max:
@@ -510,8 +546,8 @@ def DFP(
     f: Callable[[NDArray], float],
     gradf: Callable[[NDArray], NDArray],
     x0: NDArray,
-    h0: NDArray|None,
     output: str,
+    h0: NDArray|None=None,
     line_search: str="armijo",
     max_iter: int = 5000,
     epsilon: float = 1e-8,
@@ -554,10 +590,24 @@ def DFP(
 
         # initialize
         xk = x0
-        # if initial inverse hessain not provided, use idenity matrix
-        if not h0:
-            h0 = np.eye(x0.shape[0])
-        f_xk, gradf_xk, h_k = f(xk), gradf(xk), h0
+        f_xk, gradf_xk = f(xk), gradf(xk)
+
+        # initialize inverse hessian with rescaled weight
+        if line_search == 'armijo':
+            # backtracking search of step length
+            alphak = backtracking_search(f, gradf_xk, xk, -gradf_xk, alpha0, **line_search_param)
+        elif line_search == 'wolf':
+            # wolf line search of step length
+            alphak = wolf_search(f, gradf, xk, -gradf_xk, **line_search_param)
+        else:
+            raise ValueError("Line search method must be 'armijo' or 'wolf'!")
+        x_prev = xk
+        gradf_prev = gradf_xk
+        xk = xk + alphak * gradf_xk
+        gradf_xk = gradf(xk)
+        sk = xk - x_prev
+        yk = gradf_xk - gradf_prev
+        h_k = np.dot(sk, yk) / np.dot(yk, yk) * np.identity(x0.shape[0])
         
 
         # gradient convergent condition
@@ -601,11 +651,11 @@ def DFP(
 
             sk = xk - x_prev
             yk = gradf_xk - gradf_prev
-            rhok = np.dot(yk, sk)
+            rhok_inv = np.dot(yk, sk)
             
             # update H only when y.T s is positive enough, so that the updated H is PD
-            if 1 / rhok > epsilon * np.linalg.norm(yk) * np.linalg.norm(sk):
-                h_k = h_k - np.outer(np.dot(h_k, yk), np.dot(yk, h_k)) / np.dot(yk, np.dot(h_k, yk)) + np.outer(sk, sk) * rhok
+            if rhok_inv > epsilon * np.linalg.norm(yk) * np.linalg.norm(sk):
+                h_k = h_k - np.outer(np.dot(h_k, yk), np.dot(yk, h_k)) / np.dot(yk, np.dot(h_k, yk)) + np.outer(sk, sk) * 1 / rhok_inv
 
             cpu_time = time.perf_counter() - start_time
             #stop iteration of maximum cpu time has achived
