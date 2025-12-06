@@ -3,6 +3,8 @@ from src.newtonMethod import newtown, modified_newtown_cholesky
 from src.quasiNewton import BFGS, LBFGS, DFP
 from numpy.typing import NDArray
 import numpy as np
+from typing import Any 
+
 
 class FGradCounter:
     """
