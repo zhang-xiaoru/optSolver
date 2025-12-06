@@ -5,7 +5,6 @@ from numpy.typing import NDArray
 import numpy as np
 from typing import Any 
 
-
 class FGradCounter:
     """
     Wraps f and gradf to count function and gradient evaluations.
@@ -120,3 +119,80 @@ def optSolver_OptimizationHunter(problem, method: Method, options: Option) -> tu
         )
     return result
 
+def optSolver_OptimizationHunter_with_stats(problem, method: Method, options: Option) -> dict[str, Any]:
+
+    counter = FGradCounter(problem.f, problem.gradf)
+
+    ls = method.line_search
+    params = options.param
+
+    if method.method_name == "GD":
+        xk, f_xk, grad_norm, k, cpu_time = steepest_descent(
+            counter.f,
+            counter.gradf,
+            problem.x0,
+            line_search=ls,
+            **params,
+        )
+
+    elif method.method_name == 'ModifiedNewton':
+        xk, f_xk, grad_norm, k, cpu_time = modified_newtown_cholesky(
+            counter.f,
+            counter.gradf,
+            problem.hessianf,
+            problem.x0,
+            line_search=ls,
+            **params,
+        )
+
+    elif method.method_name == 'NewtonCG':
+        xk, f_xk, grad_norm, k, cpu_time = newtown(
+            counter.f,
+            counter.gradf,
+            problem.hessianf,
+            problem.x0,
+            method='cg',
+            line_search=ls,
+            **params,
+        )
+
+    elif method.method_name == 'BFGS':
+        xk, f_xk, grad_norm, k, cpu_time = BFGS(
+            counter.f,
+            counter.gradf,
+            problem.x0,
+            line_search=ls,
+            **params,
+        )
+
+    elif method.method_name == 'DFP':
+        xk, f_xk, grad_norm, k, cpu_time = DFP(
+            counter.f,
+            counter.gradf,
+            problem.x0,
+            line_search=ls,
+            **params,
+        )
+
+    elif method.method_name == 'LBFGS':
+        xk, f_xk, grad_norm, k, cpu_time = LBFGS(
+            counter.f,
+            counter.gradf,
+            problem.x0,
+            line_search=ls,
+            **params,
+        )
+
+    else:
+        raise ValueError(f"Unsupported method: {method.method_name}")
+
+    result: dict[str, Any] = {
+        "x": xk,
+        "f": f_xk,
+        "grad_norm": grad_norm,
+        "iter": k,
+        "cpu": cpu_time,
+        "nfev": counter.nfev,
+        "ngev": counter.ngev,
+    }
+    return result
