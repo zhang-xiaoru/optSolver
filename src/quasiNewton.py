@@ -286,9 +286,15 @@ def BFGS(
         gradf_xk = gradf(xk)
         sk = xk - x_prev
         yk = gradf_xk - gradf_prev
-        s_list[0] = sk
-        y_list[0] = yk
-        rho_list[0] = 1 / np.dot(sk, yk)
+        rhok_inv = np.dot(sk, yk)
+        if rhok_inv > epsilon * np.linalg.norm(sk) * np.linalg.norm(yk):
+            s_list[0] = sk
+            y_list[0] = yk
+            rho_list[0] = 1 / np.dot(sk, yk)
+        else:
+            s_list[0] = np.ones(sk.shape) / sk.shape[0]
+            y_list[0] = np.ones(yk.shape) / yk.shape[0]
+            rho_list[0] = 1
         end_pointer = (end_pointer + 1) % loop_iter_num
 
         
@@ -457,9 +463,15 @@ def LBFGS(
         gradf_xk = gradf(xk)
         sk = xk - x_prev
         yk = gradf_xk - gradf_prev
-        s_list[0] = sk
-        y_list[0] = yk
-        rho_list[0] = 1 / np.dot(sk, yk)
+        rhok_inv = np.dot(sk, yk)
+        if rhok_inv > epsilon * np.linalg.norm(sk) * np.linalg.norm(yk):
+            s_list[0] = sk
+            y_list[0] = yk
+            rho_list[0] = 1 / np.dot(sk, yk)
+        else:
+            s_list[0] = np.ones(sk.shape) / sk.shape[0]
+            y_list[0] = np.ones(yk.shape) / yk.shape[0]
+            rho_list[0] = 1
         end_pointer = (end_pointer + 1) % m 
         tol_counter = 1
 

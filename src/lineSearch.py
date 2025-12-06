@@ -39,7 +39,7 @@ def wolf_search(
         pk: NDArray,
         c1: float=1e-4,
         c2: float=0.9,
-        max_iter: int=2000
+        max_iter: int=1000
 ) -> float:
     """wolf line search methods
 
@@ -62,6 +62,10 @@ def wolf_search(
     f_xk = f(xk)
     gradf_xk = gradf(xk)
     phi_prime_0 = np.dot(gradf_xk, pk)
+
+    # check c1 < c2:
+    if c1 > c2:
+        raise ValueError("c1 must smaller than c2")
     
     # if the input search direction is not descent direction, just return
     if phi_prime_0 >= 0:
