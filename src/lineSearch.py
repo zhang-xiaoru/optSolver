@@ -39,7 +39,7 @@ def wolf_search(
         pk: NDArray,
         c1: float=1e-4,
         c2: float=0.9,
-        max_iter: int=1000
+        max_iter: int=2000
 ) -> float:
     """wolf line search methods
 

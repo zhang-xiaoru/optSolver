@@ -289,7 +289,7 @@ def BFGS(
         s_list[0] = sk
         y_list[0] = yk
         rho_list[0] = 1 / np.dot(sk, yk)
-        end_pointer += 1
+        end_pointer = (end_pointer + 1) % loop_iter_num
 
         
 
@@ -365,6 +365,7 @@ def BFGS(
                 else:
                     V = idt - 1 / rhok_inv * np.outer(sk, yk)
                     h_k = V @ h_k @ V.T + 1 / rhok_inv * np.outer(sk, sk)
+                    end_pointer += 1
 
 
 
@@ -459,8 +460,8 @@ def LBFGS(
         s_list[0] = sk
         y_list[0] = yk
         rho_list[0] = 1 / np.dot(sk, yk)
-        end_pointer += 1
-        tol_counter += 1
+        end_pointer = (end_pointer + 1) % m 
+        tol_counter = 1
 
         # gradient convergent condition
         conv_condition = conv_threshold * max(1, np.linalg.norm(gradf_xk))
