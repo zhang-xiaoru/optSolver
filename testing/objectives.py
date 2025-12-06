@@ -31,7 +31,7 @@ class Quadratic:
         U, _ = np.linalg.qr(np.random.randn(n, n))
         min_eig = 1 / kappa
         max_eig = 1
-        Q = U @ np.logspace(np.log10(min_eig), np.log10(max_eig), n) @ U.T
+        Q = U @ np.diag(np.logspace(np.log10(min_eig), np.log10(max_eig), n)) @ U.T
         #Q = U @ np.diag(np.linspace(1, kappa, n)) @ U.T
         self.U = U
         self.Q = Q
