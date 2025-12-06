@@ -1,9 +1,6 @@
 from numpy.typing import NDArray
 import numpy as np
 
-nfev = 0  # number of function evaluations
-ngev = 0  # number of gradient evaluations
-
 def cg(A: NDArray, b: NDArray, x0: NDArray, eta: float) -> NDArray:
     """conjugate gradient methods for solving linear system of equation.
 
