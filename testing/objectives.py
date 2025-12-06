@@ -19,6 +19,7 @@ class Quadratic:
         self.x0 = x0
         self.kappa = kappa
         self.n = n
+        
 
         # Set random number generator seeds
         np.random.seed(seed)
@@ -28,8 +29,10 @@ class Quadratic:
 
         # generate Q matrix with specified conditional number
         U, _ = np.linalg.qr(np.random.randn(n, n))
-        Q = U @ np.diag(np.linspace(1, kappa, n)) @ U.T
-
+        min_eig = 1 / kappa
+        max_eig = 1
+        Q = U @ np.logspace(np.log10(min_eig), np.log10(max_eig), n) @ U.T
+        #Q = U @ np.diag(np.linspace(1, kappa, n)) @ U.T
         self.U = U
         self.Q = Q
 
@@ -297,7 +300,7 @@ class Exp:
         """
 
         return (
-            (np.exp(x[0]) - 1) / (np.exp(x[0] + 1))
+            (np.exp(x[0]) - 1) / (np.exp(x[0]) + 1)
             + 0.1 * np.exp(-x[0])
             + np.sum(np.power(x[1:] - 1, 4))
         )
@@ -316,7 +319,7 @@ class Exp:
 
         grad[0] = 2 * np.exp(x[0]) / np.square(np.exp(x[0]) + 1) - 0.1 * np.exp(-x[0])
 
-        grad[1:] = 4 * np.power(x[1:], 3)
+        grad[1:] = 4 * np.power(x[1:] - 1, 3)
 
         return grad
 
@@ -332,7 +335,7 @@ class Exp:
 
         hessian = np.zeros((self.n, self.n))
 
-        hessian[0, 0] = 2 * (3 * np.exp(2 * x[0]) + np.exp(x[0])) / np.power(np.exp(x[0] + 1), 3)
+        hessian[0, 0] = 2 * (np.exp(x[0]) - np.exp(2 * x[0])) / np.power(np.exp(x[0] + 1), 3) + 0.1 * np.exp(-x[0])
         hessian[1:, 1:] = np.diag(12 * np.square(x[1:] - 1))
 
         return hessian
