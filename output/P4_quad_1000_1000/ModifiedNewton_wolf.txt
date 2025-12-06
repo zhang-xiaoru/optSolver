@@ -1,5 +1,0 @@
-Iter   f          |gradf|    alpha      delta     
------------------------------------------------
-1      8.96e+06   1.11e+05   1.00e+00   0.00e+00  
-Terminated at iteration=2 as |gradf|=1.55e-10 < threshold=1.11e-03.
-Optimized objective function value: -3.81e+00; |gradf|: 1.55e-10. Computing time: 0.019 s.

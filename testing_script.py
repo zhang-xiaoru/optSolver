@@ -47,13 +47,14 @@ problems.append(DataFit("P9_DataFit_2", x0=np.array([1, 1]), n=2))
 x0 = np.zeros(10)
 x0[0] = 1
 problems.append(Exp("P10_Exponential_10", x0=x0, n=10))
-x0 = np.zeros(1000)
+x0 = np.zeros(100)
 x0[0] = 1
-problems.append(Exp("P11_Exponential_100", x0=x0, n=1000))
-x0 = np.array([506.2] * 5)
-x0[0] = -x0[0]
+problems.append(Exp("P11_Exponential_100", x0=x0, n=100))
+
 
 # problem 12 with Genhumps function
+x0 = np.array([506.2] * 5)
+x0[0] = -x0[0]
 problems.append(Genhumps("P12_Genhumps_5", x0=x0))
 
 ###### testing problems set up ending ######
