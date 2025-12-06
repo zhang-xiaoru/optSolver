@@ -4,6 +4,25 @@ from src.quasiNewton import BFGS, LBFGS, DFP
 from numpy.typing import NDArray
 import numpy as np
 
+class FGradCounter:
+    """
+    Wraps f and gradf to count function and gradient evaluations.
+    """
+    def __init__(self, f, gradf):
+        self._f = f
+        self._gradf = gradf
+        self.nfev = 0   # number of function evaluations
+        self.ngev = 0   # number of gradient evaluations
+
+    def f(self, x):
+        self.nfev += 1
+        return self._f(x)
+
+    def gradf(self, x):
+        self.ngev += 1
+        return self._gradf(x)
+
+
 class Method:
     VALID_METHODS={
         "GD",
