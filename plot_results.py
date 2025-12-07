@@ -54,12 +54,12 @@ def parse_log_file(path: str) -> Tuple[Optional[np.ndarray], Optional[np.ndarray
 
 
 METHOD_COLOR_MAP = {
-    "GD": "#1f77b4",               
-    "ModifiedNewton": "#2ca02c",   
-    "NewtonCG": "#ff7f0e",         
-    "BFGS": "#d62728",             
-    "LBFGS": "#8d5dba",            
-    "DFP": "#8c564b",              
+    "GD": "#1f77b4",
+    "ModifiedNewton": "#2ca02c",
+    "NewtonCG": "#ff7f0e",
+    "BFGS": "#d62728",
+    "LBFGS": "#8d5dba",
+    "DFP": "#8c564b",
 }
 
 
@@ -67,20 +67,19 @@ def get_color(method_name: str) -> str:
     lower = method_name.lower()
 
     if "lbfgs" in lower:
-        return "#9467bd"  
+        return "#9467bd"
     if "bfgs" in lower:
-        return "#d62728"   
+        return "#d62728"
     if "newtoncg" in lower:
-        return "#ff7f0e"   
+        return "#ff7f0e"
     if "modifiednewton" in lower:
-        return "#2ca02c"   
+        return "#2ca02c"
     if "dfp" in lower:
-        return "#8c564b"   
+        return "#8c564b"
     if "gd" in lower:
-        return "#1f77b4"  
+        return "#1f77b4"
 
-    return "black"  
-
+    return "black"
 
 
 def get_linestyle(method_name: str) -> str:
@@ -91,6 +90,11 @@ def get_linestyle(method_name: str) -> str:
     if "wolf" in lower or "wolfe" in lower:
         return "--"
     return "-"  # default
+
+
+def signed_log(y: np.ndarray) -> np.ndarray:
+    y = np.asarray(y, dtype=float)
+    return np.sign(y) * np.log1p(np.abs(y))
 
 
 def main() -> None:
@@ -126,7 +130,6 @@ def main() -> None:
 
         print(f"Processing {prob} ...")
 
-        # ---------- 1) f(x_k) vs iteration (log scale) ----------
         plt.figure()
         for txt in txt_files:
             method_name = os.path.splitext(txt)[0]  # e.g., "BFGS_armijo"
@@ -138,10 +141,11 @@ def main() -> None:
             color = get_color(method_name)
             linestyle = get_linestyle(method_name)
 
-            # Function values on log scale (as requested)
-            plt.semilogy(
+            y_signed = signed_log(fvals)
+
+            plt.plot(
                 iters,
-                np.maximum(np.abs(fvals), 1e-20),  # guard against non-positive values
+                y_signed,
                 label=method_name,
                 color=color,
                 linestyle=linestyle,
@@ -194,4 +198,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
 
