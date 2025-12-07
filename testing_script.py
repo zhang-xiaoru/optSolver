@@ -36,7 +36,7 @@ problems.append(Quadratic2("P6_quartic_2", x0=x0, Q=Q1, sigma=1e4, n=4))
 
 # problem 7-8 with Rosenbrock function
 problems.append(Rosenbrock("P7_Rosenbrock_2", x0=np.array([-1.2, 1]), n=2))
-x0 = np.array([1]*100)
+x0 = np.array([1.0]*100)
 x0[0] = -1.2
 problems.append(Rosenbrock("P8_Rosenbrock_100", x0=x0, n=100))
 
@@ -82,7 +82,7 @@ for i, method_name in enumerate(method_name_list):
 ###### run all testing case with all methods ######
 result = {}
 
-for problem in problems:
+for problem in problems[7:8]:
     for method in methods:
 
         print(f"Run Problem {problem.name} using {method.method_name} + {method.line_search}.\n")
