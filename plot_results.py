@@ -1,12 +1,23 @@
 import os
+from typing import Tuple, Optional
+
 import numpy as np
 import matplotlib.pyplot as plt
 
+# Directory where log files are stored, organized as:
+# output/
+#   P1_quad_10_10/
+#       GD_armijo.txt
+#       GD_wolf.txt
+#       BFGS_armijo.txt
+#       ...
 OUTPUT_DIR = "output"
+
+# Directory where figures will be saved
 FIG_DIR = "figs"
 
 
-def parse_log_file(path: str):
+def parse_log_file(path: str) -> Tuple[Optional[np.ndarray], Optional[np.ndarray], Optional[np.ndarray]]:
 
     iters = []
     fvals = []
@@ -17,13 +28,12 @@ def parse_log_file(path: str):
             line = line.strip()
             if not line:
                 continue
+            # Skip possible header / separator lines
             if line.startswith("Iter") or line.startswith("-"):
                 continue
-            if line.startswith("Terminated") or line.startswith("Terminated"):
-                break
 
             parts = line.split()
-            if len(parts) < 4:
+            if len(parts) < 3:
                 continue
 
             try:
@@ -43,14 +53,57 @@ def parse_log_file(path: str):
     return np.array(iters), np.array(fvals), np.array(gnorms)
 
 
-def main():
+METHOD_COLOR_MAP = {
+    "GD": "#1f77b4",               
+    "ModifiedNewton": "#2ca02c",   
+    "NewtonCG": "#ff7f0e",         
+    "BFGS": "#d62728",             
+    "LBFGS": "#8d5dba",            
+    "DFP": "#8c564b",              
+}
+
+
+def get_color(method_name: str) -> str:
+    lower = method_name.lower()
+
+    if "lbfgs" in lower:
+        return "#9467bd"  
+    if "bfgs" in lower:
+        return "#d62728"   
+    if "newtoncg" in lower:
+        return "#ff7f0e"   
+    if "modifiednewton" in lower:
+        return "#2ca02c"   
+    if "dfp" in lower:
+        return "#8c564b"   
+    if "gd" in lower:
+        return "#1f77b4"  
+
+    return "black"  
+
+
+
+def get_linestyle(method_name: str) -> str:
+    """Armijo → solid line, Wolfe/Wolf → dashed line, otherwise solid."""
+    lower = method_name.lower()
+    if "armijo" in lower:
+        return "-"
+    if "wolf" in lower or "wolfe" in lower:
+        return "--"
+    return "-"  # default
+
+
+def main() -> None:
+    # Ensure figure directory exists
     if not os.path.exists(FIG_DIR):
         os.makedirs(FIG_DIR, exist_ok=True)
 
+    # Check output directory
     if not os.path.exists(OUTPUT_DIR):
         print(f"Directory '{OUTPUT_DIR}' not found.")
         return
 
+    # One subdirectory per problem
     problem_dirs = sorted(
         d for d in os.listdir(OUTPUT_DIR)
         if os.path.isdir(os.path.join(OUTPUT_DIR, d))
@@ -73,7 +126,7 @@ def main():
 
         print(f"Processing {prob} ...")
 
-        # ---------- f(x_k) vs iteration ----------
+        # ---------- 1) f(x_k) vs iteration (log scale) ----------
         plt.figure()
         for txt in txt_files:
             method_name = os.path.splitext(txt)[0]  # e.g., "BFGS_armijo"
@@ -81,18 +134,30 @@ def main():
             iters, fvals, gnorms = parse_log_file(path)
             if iters is None:
                 continue
-            plt.semilogy(iters, fvals, label=method_name)
+
+            color = get_color(method_name)
+            linestyle = get_linestyle(method_name)
+
+            # Function values on log scale (as requested)
+            plt.semilogy(
+                iters,
+                np.maximum(np.abs(fvals), 1e-20),  # guard against non-positive values
+                label=method_name,
+                color=color,
+                linestyle=linestyle,
+                linewidth=1.8,
+            )
 
         plt.xlabel("Iteration")
-        plt.ylabel("f(x_k)")
-        plt.title(f"{prob}: f(x_k) vs iteration")
-        plt.legend()
-        plt.grid(True, which="both", linestyle="--", linewidth=0.5)
+        plt.ylabel("Function value $f(x_k)$ (log scale)")
+        plt.title(f"{prob}: Function value vs. iteration")
+        plt.grid(True, which="both", linestyle="--", linewidth=0.5, alpha=0.6)
+        plt.legend(fontsize=7)
         plt.tight_layout()
-        plt.savefig(os.path.join(FIG_DIR, f"{prob}_f.png"), dpi=200)
+        plt.savefig(os.path.join(FIG_DIR, f"{prob}_f_vs_iter.png"), dpi=200)
         plt.close()
 
-        # ---------- ||grad f(x_k)||^2 vs iteration ----------
+        # ---------- 2) ||grad f(x_k)||_2 vs iteration (log scale) ----------
         plt.figure()
         for txt in txt_files:
             method_name = os.path.splitext(txt)[0]
@@ -100,21 +165,33 @@ def main():
             iters, fvals, gnorms = parse_log_file(path)
             if iters is None:
                 continue
-            plt.semilogy(iters, gnorms ** 2, label=method_name)
+
+            color = get_color(method_name)
+            linestyle = get_linestyle(method_name)
+
+            plt.semilogy(
+                iters,
+                np.maximum(gnorms, 1e-20),
+                label=method_name,
+                color=color,
+                linestyle=linestyle,
+                linewidth=1.8,
+            )
 
         plt.xlabel("Iteration")
-        plt.ylabel("||grad f(x_k)||^2")
-        plt.title(f"{prob}: ||grad f(x_k)||^2 vs iteration")
-        plt.legend()
-        plt.grid(True, which="both", linestyle="--", linewidth=0.5)
+        plt.ylabel(r"$\|\nabla f(x_k)\|_2$ (log scale)")
+        plt.title(f"{prob}: Gradient norm vs. iteration")
+        plt.grid(True, which="both", linestyle="--", linewidth=0.5, alpha=0.6)
+        plt.legend(fontsize=7)
         plt.tight_layout()
-        plt.savefig(os.path.join(FIG_DIR, f"{prob}_grad2.png"), dpi=200)
+        plt.savefig(os.path.join(FIG_DIR, f"{prob}_gradnorm_vs_iter.png"), dpi=200)
         plt.close()
 
-        print(f"  Saved {prob}_f.png and {prob}_grad2.png")
+        print(f"  Saved {prob}_f_vs_iter.png and {prob}_gradnorm_vs_iter.png")
 
     print("All plots generated into 'figs/' directory.")
 
 
 if __name__ == "__main__":
     main()
+
