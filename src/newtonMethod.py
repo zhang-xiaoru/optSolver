@@ -15,7 +15,7 @@ import os
 
 
 def cholesky_adding(A: NDArray, beta: float, max_iter: int = 1000) -> float:
-    """find the approrate mutipliter for modifying Hessian matrix
+    """find the appropriate multiplier for modifying Hessian matrix
 
     Args:
         A (NDArray): N*N Hessian matrix
@@ -23,7 +23,7 @@ def cholesky_adding(A: NDArray, beta: float, max_iter: int = 1000) -> float:
         max_iter (int, optional): Maximum iteration allowed. Defaults to 1000.
 
     Returns:
-        float: founded multipliyer
+        float: founded multiplier
     """
     n_dim = A.shape[0]
 
@@ -60,7 +60,8 @@ def newtown(
     alpha0: float = 1,
     **line_search_param
 ) -> tuple[NDArray, float, float|np.floating, int, float]:
-    """Direct Newton's methods
+     
+    """Direct Newton's methods and Conjugate gradient Newton's methods
 
     Args:
         f (Callable[[NDArray], float]): objective function
@@ -72,10 +73,15 @@ def newtown(
         line_search (str, optional): method used for line search, can be 'armijo' or 'wolf'
         max_iter (int, optional): maximum iteration allowed. Defaults to 5000.
         conv_threshold (float, optional): Convergence threshold for gradient. Defaults to 1e-8.
+        eta (float, optional): Tolerance for approximate solution of conjugate gradient. Defaults to 0.01.
+        cpu_time_max (int, optional): run time limit in seconds. Defaults to 600
         alpha0 (float, optional): initial step length for 1st iteration. Defaults to 1.
+        **line_search_paramL: keywords parameters for Armijo or Wolf line search methods
+
 
     Returns:
-        tuple(NDArray, float): 
+        tuple[NDArray, float, float|np.floating, int, float]: stooped value for:
+        x (position), f (function value), |gradf| (norm of gradient), iter (total iterations), cpu_time (total cpu time)        
     """
 
     if method not in ['exact', 'cg']:
@@ -202,25 +208,25 @@ def modified_newtown_cholesky(
     cpu_time_max: int=600,
     **line_search_param
 ) -> tuple[NDArray, float, float|np.floating, int, float]:
-    """_summary_
+    """Modified Newton's method using Cholesky factorization to check the PD of added matrix
 
     Args:
-        f (Callable[[NDArray], float]): _description_
-        gradf (Callable[[NDArray], NDArray]): _description_
-        hessianf (Callable[[NDArray], NDArray]): _description_
-        x0 (NDArray): _description_
-        output (str): _description_
-        line_search (str, optional): _description_. Defaults to 'armijo'.
-        max_iter (int, optional): _description_. Defaults to 5000.
-        conv_threshold (float, optional): _description_. Defaults to 1e-8.
-        beta (float, optional): _description_. Defaults to 1e-4.
+        f (Callable[[NDArray], float]): objective function
+        gradf (Callable[[NDArray], NDArray]): gradient of objective function
+        hessianf (Callable[[NDArray], NDArray]): hessian of objective function
+        x0 (NDArray): initial position
+        output (str): filename of output file
+        line_search (str, optional): method used for line search, can be 'armijo' or 'wolf'
+        max_iter (int, optional): maximum iteration allowed. Defaults to 5000.
+        conv_threshold (float, optional): Convergence threshold for gradient. Defaults to 1e-8.
+        beta (float, optional): Tunning parameter for minimum addition. Defaults to 1e-4
         alpha0 (float, optional): _description_. Defaults to 1.
+        cpu_time_max (int, optional): run time limit in seconds. Defaults to 600s.
 
-    Raises:
-        ValueError: _description_
 
     Returns:
-        tuple[NDArray, float]: _description_
+        tuple[NDArray, float, float|np.floating, int, float]: stooped value for:
+        x (position), f (function value), |gradf| (norm of gradient), iter (total iterations), cpu_time (total cpu time)
     """    
 
     # check if line_search legit
@@ -290,6 +296,8 @@ def modified_newtown_cholesky(
             # update
             xk = xk + alphak * pk
             f_xk, gradf_xk, hessianf_xk = f(xk), gradf(xk), hessianf(xk)
+
+            # modified hessian with Cholesky factorization
             delta = cholesky_adding(hessianf_xk, beta)
             pk = np.linalg.solve(hessianf_xk + delta * np.identity(n_dim), -gradf_xk)
 

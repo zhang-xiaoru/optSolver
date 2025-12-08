@@ -32,6 +32,7 @@ def steepest_descent(
     cpu_time_max: int=600,
     **line_search_param
 ) -> tuple[NDArray, float, float|np.floating, int, float]:  
+      
     """Steepest decent methods with backtracking line search methods
 
     Args:
@@ -39,15 +40,15 @@ def steepest_descent(
         gradf (Callable[NDArray]): Gradient of objective function.
         x0 (NDArray): initial position.
         output (str, optional): name of output file.
-        line_search (str, optional): Line search method.
+        line_search (str, optional): Line search method. Defaults to 'armijo'.
         max_iter (int, optional): Maximum iteration number. Defaults to 5000.
         conv_threshold (float, optional): Convergent threshold. Defaults to 1e-6.
         alpha0 (float, optional): Initial guess of first step length search. Defaults to 1.
-        line_search_param: additional parameters for line search methods
-
+        cpu_time_max (int, optional): maximum CPU time in seconds. Defaults to 600.
+        **line_search_param: keywords parameters for armijo or wolf line search methods
     Returns:
-        tuple[float, float]: return optimal solution and minimized objective function value 
-        
+        tuple[NDArray, float, float|np.floating, int, float]: stooped value for:
+        x (position), f (function value), |gradf| (norm of gradient), iter (total iterations), cpu_time (total cpu time)        
     """  
       
     # check if line_search legit
@@ -81,6 +82,7 @@ def steepest_descent(
         conv_condition = conv_threshold * max(1, np.linalg.norm(gradf_xk))
 
         for k in tqdm(range(1, int(max_iter) + 1)):
+
             # vector norm of gradient
             norm_grad = np.linalg.norm(gradf_xk)
 
@@ -109,9 +111,10 @@ def steepest_descent(
                 # use Armijo backtracking algo to find step length
                 alphak = backtracking_search(f, gradf_xk, xk, pk, alpha_init, **line_search_param)
             elif line_search == 'wolf':
+                # use Wolf line search algo for step length
                 alphak = wolf_search(f, gradf, xk, pk, **line_search_param)
             else:
-                raise ValueError()
+                raise ValueError("Line search methods must be 'armijo' or 'wolf'! ")
 
             # record the function value, gradiaent norm and founded step length for current posistion
             file.write(f"{k:<6} {f_xk:<10.2e} {norm_grad:<10.2e} {alphak:<10.2e}\n")
@@ -120,7 +123,7 @@ def steepest_descent(
             x_next = xk + alphak * pk
             f_next = f(x_next)
 
-            # find apporprate initial alpha for next posistion
+            # find appropriate initial alpha for next position
             alpha_init = iterate_alpha(
                 f_curr=f_next, f_prev=f_xk, gradf_prev=gradf_xk, p_prev=pk
             )

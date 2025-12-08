@@ -17,10 +17,10 @@ def backtracking_search(
         f (Callable): objective function
         gradf (Callable): gradient of objective function
         xk (NDArray): current position
-        pk (_type_): descent direction
-        alpha0 (_type_): initial step length
-        c1 (_type_): control varaible for Armijo condition
-        tau (_type_): contraction coefficient for step length
+        pk (NDArray): descent direction
+        alpha0 (float): initial step length. Default to 1. 
+        c1 (float): control variable for Armijo condition. Default to 1e-5
+        tau (float): contraction coefficient for step length. Default to 0,5. 
 
     Returns:
         float: final step length
@@ -76,13 +76,19 @@ def wolf_search(
         # break the line search if the iteration take to much
         if counter > max_iter:
             return alpha
+        # if armijo condition not satisfied, shrink the upper bond of allowed step length
         if f(xk + alpha * pk) > f_xk + c1 * alpha * phi_prime_0:
             alpha_u = alpha
+
         else:
+
+            # if armojo satsified but curvature condition is not, increase the lower bond of allowed step length
             if np.dot(gradf(xk + alpha * pk), pk) < c2 * phi_prime_0:
                 alpha_l = alpha
             else:
                 return alpha
+        
+        # if the Armijo condition has not been violated once, increase the lower bound
         if alpha_u < np.inf:
             alpha = (alpha_l + alpha_u) / 2
         else:

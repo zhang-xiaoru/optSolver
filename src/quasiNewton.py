@@ -25,7 +25,7 @@ def L_BFGS_double_loop_search(
         start_pointer (int): pointer indicate the s, rho, y parameter of current k iteration is recorded in list
 
     Returns:
-        NDArray: _description_
+        NDArray: descent direction of next step
     """    
     q = gradf_xk
     m = s_list.shape[0]
@@ -65,24 +65,25 @@ def construct_hessian(
         y_list: NDArray,
         rho_list: NDArray
 ) -> NDArray:
-    """_summary_
+    """construct current step Hessian matrix based on the s and y history.
 
     Args:
-        s_list (NDArray): _description_
-        y_list (NDArray): _description_
-        rho_list (NDArray): _description_
+        s_list (NDArray): list of previous s
+        y_list (NDArray): list of previous y
+        rho_list (NDArray): list of previous rho
 
     Returns:
-        NDArray: _description_
+        NDArray: constructed Hessian matrix
     """    
+
+    # initialize
     q = 1
     m = s_list.shape[0]
     n = s_list.shape[1]
     alpha_list = np.zeros((m, n))
     
-    # backward iterations, if k < m, then the list has not yet been fully filled
+    # backward iterations
     for i in range(m - 1, -1, -1):
-        # iterate pointer in cycle of the list len
         alpha_list[i] = rho_list[i] * s_list[i] * q
         q = q - np.dot(alpha_list[i], y_list[i])
 
@@ -229,7 +230,7 @@ def BFGS(
     alpha0: float=1,
     **line_search_param
 ) -> tuple[NDArray, float, float|np.floating, int, float]:
-    """implementation of BFGS methods with Wolf line search
+    """implementation of BFGS methods with Wolf and Armijio line search
 
     Args:
         f (Callable[[NDArray], float]): Objective functions
@@ -237,13 +238,17 @@ def BFGS(
         x0 (NDArray): intial points
         h0 (NDArray): intial PD iverse approx hessian
         output (str): output file name
+        line_search (str, optional): Line search method. Defaults to 'armijo'.
         max_iter (int, optional): maximum allowed iterations. Defaults to 5000.
-        epsilon (float, optional): threshold for juging the positivinites of yTs. Defaults to 1e-8.
+        epsilon (float, optional): threshold for judging the positivities of yTs. Defaults to 1e-8.
         conv_threshold (float, optional): convergence threshold of gradient. Defaults to 1e-8.
         cpu_time_max (int, optional): maximum allowed computations time (s). Defaults to 600.
+        alpha0 (float, optional): initial step length for line search. Defaults to 1.
+        **line_search_param: line search parameters for Armijo and Wolf line search
 
     Returns:
-        None
+        tuple[NDArray, float, float|np.floating, int, float]: stooped value for:
+        x (position), f (function value), |gradf| (norm of gradient), iter (total iterations), cpu_time (total cpu time)
     """  
 
     # check if line_search legit
@@ -263,15 +268,21 @@ def BFGS(
 
         # initialize
         xk = x0
+
+        # use double loop when iteration number is small. 
+        # threshold for break the double loop
         loop_iter_num = min(x0.shape[0], max_iter)
         f_xk, gradf_xk = f(xk), gradf(xk)
         s_list = np.zeros((loop_iter_num, x0.shape[0]))
         y_list = np.zeros((loop_iter_num, x0.shape[0]))
         rho_list = np.zeros(loop_iter_num)
+        
+        # current position in the memory list
         end_pointer = 0
         idt = np.eye(x0.shape[0])
 
         # initialize inverse hessian with rescaled weight
+        # use GD at first step
         if line_search == 'armijo':
             # backtracking search of step length
             alphak = backtracking_search(f, gradf_xk, xk, -gradf_xk, alpha0, **line_search_param)
@@ -280,6 +291,7 @@ def BFGS(
             alphak = wolf_search(f, gradf, xk, -gradf_xk, **line_search_param)
         else:
             raise ValueError("Line search method must be 'armijo' or 'wolf'!")
+        
         x_prev = xk
         gradf_prev = gradf_xk
         xk = xk + alphak * gradf_xk
@@ -287,14 +299,19 @@ def BFGS(
         sk = xk - x_prev
         yk = gradf_xk - gradf_prev
         rhok_inv = np.dot(sk, yk)
+
+        # check if the init position has PD curvature
         if rhok_inv > epsilon * np.linalg.norm(sk) * np.linalg.norm(yk):
             s_list[0] = sk
             y_list[0] = yk
             rho_list[0] = 1 / np.dot(sk, yk)
         else:
+            # if not, initial inv hessian as identity matrix
             s_list[0] = np.ones(sk.shape) / sk.shape[0]
             y_list[0] = np.ones(yk.shape) / yk.shape[0]
             rho_list[0] = 1
+
+        # increase pointer
         end_pointer = (end_pointer + 1) % loop_iter_num
 
         
@@ -327,12 +344,15 @@ def BFGS(
                 )
                 break
 
+            # if added memory size smaller than pre-defined threshold, use double loop iteration
             if end_pointer < loop_iter_num:
                 pk = L_BFGS_double_loop_search(
                     gradf_xk, s_list, rho_list, y_list, end_pointer, end_pointer
                 )
             else:
+                # if memory size stored to large, use direct matrix mul instead
                 if end_pointer == loop_iter_num:
+                    # first construct the hessian for gradient list
                     h_k = construct_hessian(s_list, y_list, rho_list)
                 pk = - np.dot(h_k, gradf_xk)
 
@@ -363,12 +383,14 @@ def BFGS(
             
             # update H only when y.T s is positive enough, so that the updated H is PD
             if rhok_inv > epsilon * np.linalg.norm(yk) * np.linalg.norm(sk):
+                # add memory list if memory size small
                 if end_pointer < loop_iter_num:
                     s_list[end_pointer, :] = sk
                     y_list[end_pointer, :] = yk
                     rho_list[end_pointer] = 1 / rhok_inv
                     end_pointer += 1
                 else:
+                    # update hessian
                     V = idt - 1 / rhok_inv * np.outer(sk, yk)
                     h_k = V @ h_k @ V.T + 1 / rhok_inv * np.outer(sk, sk)
                     end_pointer += 1
@@ -407,17 +429,21 @@ def LBFGS(
 
     Args:
         f (Callable[[NDArray], float]): objective function
-        gradf (Callable[[NDArray], float]): gradientof objective function
+        gradf (Callable[[NDArray], float]): gradient of objective function
         x0 (NDArray): initial point
         m (int): memory of LBFGS
         output (str): output file name
+        line_search (str, optional): line search method. Defaults to 'armijo'.
         max_iter (int, optional): maximum allowed iterations. Defaults to 5000.
-        epsilon (float, optional): threshold for juging the positivinites of yTs. Defaults to 1e-8.
+        epsilon (float, optional): threshold for judging the positivities of yTs. Defaults to 1e-8.
         conv_threshold (float, optional): convergence threshold of gradient. Defaults to 1e-8.
         cpu_time_max (int, optional): maximum cpu time. Defaults to 600.
+        alpha0 (float, optional): init step length. Defaults to 1.
+        **line_search_param: keywords parameter for Armijo or Wolf line search.
 
     Returns:
-        None
+        tuple[NDArray, float, float|np.floating, int, float]: stooped value for:
+        x (position), f (function value), |gradf| (norm of gradient), iter (total iterations), cpu_time (total cpu time)
     """    
 
     # check if line_search legit
@@ -449,6 +475,7 @@ def LBFGS(
         tol_counter = 0
         
         # initialize inverse hessian with rescaled weight
+        # initial step use gradient descent 
         if line_search == 'armijo':
             # backtracking search of step length
             alphak = backtracking_search(f, gradf_xk, xk, -gradf_xk, alpha0, **line_search_param)
@@ -457,6 +484,7 @@ def LBFGS(
             alphak = wolf_search(f, gradf, xk, -gradf_xk, **line_search_param)
         else:
             raise ValueError("Line search method must be 'armijo' or 'wolf'!")
+        
         x_prev = xk
         gradf_prev = gradf_xk
         xk = xk + alphak * gradf_xk
@@ -464,6 +492,8 @@ def LBFGS(
         sk = xk - x_prev
         yk = gradf_xk - gradf_prev
         rhok_inv = np.dot(sk, yk)
+
+        # if init hessian is not PD, init with idenity; else add to list
         if rhok_inv > epsilon * np.linalg.norm(sk) * np.linalg.norm(yk):
             s_list[0] = sk
             y_list[0] = yk
@@ -562,7 +592,6 @@ def DFP(
     gradf: Callable[[NDArray], NDArray],
     x0: NDArray,
     output: str,
-    h0: NDArray|None=None,
     line_search: str="armijo",
     max_iter: int = 5000,
     epsilon: float = 1e-8,
@@ -577,15 +606,17 @@ def DFP(
         f (Callable[[NDArray], float]): Objective functions
         gradf (Callable[[NDArray], NDArray]): _Gradient of objective functions
         x0 (NDArray): intial points
-        h0 (NDArray): intial PD iverse approx hessian
         output (str): output file name
         max_iter (int, optional): maximum allowed iterations. Defaults to 5000.
         epsilon (float, optional): threshold for juging the positivinites of yTs. Defaults to 1e-8.
         conv_threshold (float, optional): convergence threshold of gradient. Defaults to 1e-8.
         cpu_time_max (int, optional): maximum allowed computations time (s). Defaults to 600.
+        alpha0 (float, optional): init step length. Defaults to 1.
+        **line_search_param: keywords parameter for Armijo or Wolf line search.
 
     Returns:
-        None
+        tuple[NDArray, float, float|np.floating, int, float]: stooped value for:
+        x (position), f (function value), |gradf| (norm of gradient), iter (total iterations), cpu_time (total cpu time)
     """ 
 
     # check if line_search legit
@@ -616,6 +647,8 @@ def DFP(
             alphak = wolf_search(f, gradf, xk, -gradf_xk, **line_search_param)
         else:
             raise ValueError("Line search method must be 'armijo' or 'wolf'!")
+        
+        # init the inv hessian
         x_prev = xk
         gradf_prev = gradf_xk
         xk = xk + alphak * gradf_xk

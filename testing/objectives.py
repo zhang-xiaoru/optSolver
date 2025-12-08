@@ -6,7 +6,7 @@ class Quadratic:
     def __init__(
         self, name: str, x0: NDArray, kappa: float = 1, n: int = 2, seed: int = 0
     ) -> None:
-        """initialize qudratic problem class
+        """initialize quadratic problem class
 
         Args:
             name (str): name of the problem
@@ -37,35 +37,35 @@ class Quadratic:
         self.Q = Q
 
     def f(self, x: NDArray) -> float:
-        """_summary_
+        """function value
 
         Args:
-            x (NDArray): _description_
+            x (NDArray): position
 
         Returns:
-            NDArray: _description_
+            float: function value at x
         """
         return 0.5 * np.dot(x, np.dot(self.Q, x)) + np.dot(self.q, x)
 
     def gradf(self, x: NDArray) -> NDArray:
-        """_summary_
+        """gradient
 
         Args:
-            x (NDArray): _description_
+            x (NDArray): position
 
         Returns:
-            NDArray: _description_
+            NDArray: gradient at x
         """
         return np.dot(self.Q, x) + self.q
 
     def hessianf(self, x: NDArray) -> NDArray:
-        """_summary_
+        """hessian matrix
 
         Args:
-            x (NDArray): _description_
+            x (NDArray): position
 
         Returns:
-            NDArray: _description_
+            NDArray: hessian matrix at x
         """
 
         return self.Q
@@ -75,14 +75,14 @@ class Quadratic2:
     def __init__(
         self, name: str, x0: NDArray, Q: NDArray, sigma: float = 1, n: int = 2
     ) -> None:
-        """_summary_
+        """init quartic problem class
 
         Args:
-            name (str): _description_
-            x0 (NDArray): _description_
-            Q (NDArray): _description_
-            sigma (float, optional): _description_. Defaults to 1.
-            n (int, optional): _description_. Defaults to 2.
+            name (str): function name
+            x0 (NDArray): init position
+            Q (NDArray): Q matrix. symmetric
+            sigma (float, optional): sigma parameter. Defaults to 1.
+            n (int, optional): problem dimension. Defaults to 2.
         """
 
         self.name = name

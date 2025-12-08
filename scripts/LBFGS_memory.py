@@ -1,11 +1,11 @@
 import numpy as np
 from optimizer import Method, Option, optSolver_OptimizationHunter
-from testing.objectives import Quadratic
+from testing.objectives import Quadratic, Exp
 import os
 
 np.random.seed(0)
 
-dims = [10, 100, 1000, 10000]
+dims = [10, 100, 1000]
 
 kappa = 1000
 
@@ -13,7 +13,7 @@ memory_sizes = [
     [1, 2, 5],
     [1, 2, 5, 20, 50],
     [1, 2, 5, 50, 200, 500],
-    [1, 2, 5, 50, 500, 2000, 5000]
+   # [1, 2, 5, 50, 500, 2000, 5000]
 
 ]
 
@@ -28,7 +28,7 @@ table_name = ["m", "f", "|gradf|", "iter", "CPU_time"]
 
 for i, dim in enumerate(dims):
     problem = Quadratic(
-        name = f"dim_{dim}",
+        name = f"Quadratic_dim_{dim}",
         kappa=kappa,
         x0=20 * np.random.rand(dim) - 10,
         n=dim
@@ -44,9 +44,8 @@ for i, dim in enumerate(dims):
         print(f"Run problem with dim: {problem.n} and memory size: {m}\n")
         option_armijo = Option()
         option_armijo.set_option_params(
-            output=f"./problem_memo_output/{problem.name}/{method_armijo.line_search}_m{m}.txt",
-            m=m,
-            conv_threshold=1e-10
+            output=f"./problem_memo_output/kappa_{kappa}/{problem.name}/{method_armijo.line_search}_m{m}.txt",
+            m=m
         )
         print("Armijo line search: \n")
         _, f, norm_gradf, iter, cpu_time = optSolver_OptimizationHunter(
@@ -56,9 +55,9 @@ for i, dim in enumerate(dims):
 
         option_wolf = Option()
         option_wolf.set_option_params(
-            output=f"./problem_memo_output/{problem.name}/{method_wolf.line_search}_m{m}.txt",
+            output=f"./problem_memo_output/kappa_{kappa}/{problem.name}/{method_wolf.line_search}_m{m}.txt",
             m=m,
-            conv_threshold=1e-10
+            c2=0.1
         )
         print("Wolf line search: \n")
         _, f, norm_gradf, iter, cpu_time = optSolver_OptimizationHunter(
@@ -69,8 +68,7 @@ for i, dim in enumerate(dims):
     print(f"Run problem with dim: {problem.n} and memory size: full\n")
     option_armijo = Option()
     option_armijo.set_option_params(
-        output=f"./problem_memo_output/{problem.name}/{method_full_armijo.line_search}_full.txt",
-        conv_threshold=1e-10
+        output=f"./problem_memo_output/kappa_{kappa}/{problem.name}/{method_full_armijo.line_search}_full.txt",
     )
     print("Armijo line search: \n")
     _, f, norm_gradf, iter, cpu_time = optSolver_OptimizationHunter(
@@ -81,7 +79,7 @@ for i, dim in enumerate(dims):
 
     option_wolf = Option()
     option_wolf.set_option_params(
-        output=f"./problem_memo_output/{problem.name}/{method_full_wolf.line_search}_full.txt",
+        output=f"./problem_memo_output/kappa_{kappa}/{problem.name}/{method_full_wolf.line_search}_full.txt",
         conv_threshold=1e-10
     )
     print("Wolf line search: \n")
@@ -92,17 +90,17 @@ for i, dim in enumerate(dims):
     
 
     # save summary table
-    if not os.path.exists(f"./problem_memo_output/{problem.name}/summary/"):
-        os.makedirs(f"./problem_memo_output/{problem.name}/summary/")
+    if not os.path.exists(f"./problem_memo_output/kappa_{kappa}/{problem.name}/summary/"):
+        os.makedirs(f"./problem_memo_output/kappa_{kappa}/{problem.name}/summary/")
 
     np.savetxt(
-        f"./problem_memo_output/{problem.name}/summary/{method_armijo.line_search}.txt",
+        f"./problem_memo_output/kappa_{kappa}/{problem.name}/summary/{method_armijo.line_search}.txt",
         summary_table_armijo,
         header="    ".join(table_name),
         comments=''
     )
     np.savetxt(
-        f"./problem_memo_output/{problem.name}/summary/{method_wolf.line_search}.txt",
+        f"./problem_memo_output/kappa_{kappa}/{problem.name}/summary/{method_wolf.line_search}.txt",
         summary_table_wolf,
         header="    ".join(table_name),
         comments=''
