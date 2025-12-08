@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 # An Python implementation of unconstrained optimizers
 
 ## How to use
@@ -72,4 +70,4 @@ All method function are implemented inside `./src`.
 * `gradeintDescent.py`. This function contains the implementation of gradient descent methods.
 * `lineSearch.py`. This function constrain the implementation fo Armijo backtracking line search and Wolf line search method.
 
->>>>>>> 8190fa1 (finalized)
+
