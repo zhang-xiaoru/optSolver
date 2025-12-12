@@ -57,7 +57,7 @@ This repository contains all the required components for the project.
 #### Specify the parameters
 The main function also requires an `Option` class instance implemented in `optimizer.py` to specify any parameter for the solver. To do that, create a `Option` class instance and supply any parameter by calling `Option.set_option_params` and specifying the  parameter key and value through arguments.
 
-> ![NOTE]
+> [!NOTE]
 > * The specified parameter key must match that of the method used.
 
 The only required specified parameter is `output`, which specifies the directory for storing the output file of the solver. Other parameters for the solver are optional, and a default value will be applied if not specified.
