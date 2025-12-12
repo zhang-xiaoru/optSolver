@@ -1,4 +1,4 @@
-# An Python implementation of unconstrained optimizers
+# A Python implementation of unconstrained optimizers
 
 ## How to use
 
@@ -12,12 +12,12 @@ pip install -r requirements.txt
 ```
 
 ### Run test cases
-All the results can be obtained by ruining the testing main function `make_summary_table.py`. This will run all 12 testing case implemented in `./testing/objectives.py` with all implemented methods. The output file will be store in `./output_summary` and summary table in `./summary_table.csv`.
+All the results can be obtained by running the testing main function `make_summary_table.py`. This will run all 12 testing cases implemented in `./testing/objectives.py` with all implemented methods. The output file will be stored in `./output_summary` and the summary table in `./summary_table.csv`.
 
 ### Run RosenBrock Function
-We provide `run_rosenBrock.py` to run RosenBrock type questions using LBFGS with Wolf line search. The parameter are default setting. The output file will be store in `./output_rosenBrock/<problem name>_LBFGS_wolf.txt` and a summary table in `./summary_table_rosenbrock.csv`. 
+We provide `run_rosenBrock.py` to run RosenBrock-type questions using LBFGS with Wolf line search. The parameters are the default setting. The output file will be stored in `./output_rosenBrock/<problem name>_LBFGS_wolf.txt` and a summary table in `./summary_table_rosenbrock.csv`. 
 
-Default problem is as follow. Adding more with chosen initial position and dimension if want to.
+The default problem is as follows. Adding more with the  chosen initial position and dimension, if you want to.
 ```python
 def build_problems():
     np.random.seed(0)
@@ -39,35 +39,35 @@ def build_problems():
 ```
 
 ### Run main function
-The main solver function is implement in `./optimizer.py` as `optSolver_OptimizationHunter`. The function will return the final position, function value, gradient norm, total iteration and cpu time as tuple in this order.
+The main solver function is implemented in `./optimizer.py` as `optSolver_OptimizationHunter`. The function will return the final position, function value, gradient norm, total iteration, and CPU time as a tuple in this order.
 #### Create problem
-Create a class with name of the problem, Function that return the function value, gradient vector and perhaps hessian matrix depends on the methods choice. 
+Create a class with the name of the problem, a Function that returns the function value, gradient vector, and perhaps the Hessian matrix, depending on the method's choice. 
 
-You can follow one of the testing problem to create additional problem
+You can follow one of the testing problems to create an additional problem
 
 #### Specify the methods
-the main function requires a `Method` class instant implemented in `optimzer` to specify the solver used. `Method` class requires initialize the `name` of optimizer and `line_search`, line search methods. 
+The main function requires a `Method` class instance implemented in `optimizer` to specify the solver used. `Method` class requires initialization of the `name` of optimizer and `line_search`, line search methods. 
 
 Currently, the `name` supports "'GD', 'ModifiedNewton', 'NewtonCG', 'BFGS', 'DFP', 'LBFGS'".
 
 `line_search` supports 'armijo' and 'wolf'.
 
-This repository contains all required components for the project.
+This repository contains all the required components for the project.
 
 #### Specify the parameters
-the main function also requires a `Option` class instant implemented in `optimizer.py` to specify any parameter for the solver. To do that, create a `Option` class instant and supply any parameter by calling `Option.set_option_params` and specify parameter key and value through argument.
+The main function also requires an `Option` class instance implemented in `optimizer.py` to specify any parameter for the solver. To do that, create a `Option` class instance and supply any parameter by calling `Option.set_option_params` and specifying the  parameter key and value through arguments.
 
-![Note]
+> ![Note]
 * The specified parameter key must match that of the method used.
 
-The only required specified parameter is `output`, which specify the directory for storing output file of solver. Other parameters for the solver are optional, and default value will be applied if not specified.
+The only required specified parameter is `output`, which specifies the directory for storing the output file of the solver. Other parameters for the solver are optional, and a default value will be applied if not specified.
 
 ## Method Functions
-All method function are implemented inside `./src`.
-* `conjGrad.py`. This function contains the implementation of conjugate gradient methods for solving linear system of equation
-* `newtonMethods.py`. This function contains the implementation of Newton-methods with CG method used for solving linear system of equations and wolf linear each and Modified Newton-methods using Cholesky factorization
-* `quasiNewton.py`. This function contains the implementation of all quasi Newton methods, include BFGS, LBFGS and DFP methods.
+All method functions are implemented inside `./src`.
+* `conjGrad.py`. This function contains the implementation of conjugate gradient methods for solving linear systems of equations
+* `newtonMethods.py`. This function contains the implementation of Newton methods with the CG method used for solving linear systems of equations, and Wolfe's linear each and Modified Newton methods using Cholesky factorization
+* `quasiNewton.py`. This function contains the implementation of all quasi-Newton methods, including BFGS, LBFGS, and DFP methods.
 * `gradeintDescent.py`. This function contains the implementation of gradient descent methods.
-* `lineSearch.py`. This function constrain the implementation fo Armijo backtracking line search and Wolf line search method.
+* `lineSearch.py`. This function constrains the implementation of the Armijo backtracking line search and the Wolf line search method.
 
 
